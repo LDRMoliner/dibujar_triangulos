@@ -240,7 +240,8 @@ void dibujar_triangulo(triobj *optr, int i)
 
     // Ahora vamos a calcular los puntos de corte para dibujar líneas.
 
-    rellenar_triangulo(pgoiptr, pbeheptr, perdiptr);
+    rellenar_triangulo(pgoiptr, perdiptr, pbeheptr);
+    rellenar_triangulo (pgoiptr2, perdiptr2, pbeheptr2);
 }
 
 static void marraztu(void)
