@@ -122,27 +122,29 @@ void mxp(punto *pptr, double m[16], punto p)
 void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, int i, punto *corte)
 {
     float m = 0;
-    if (punto_superior->x == punto_inferior->x)
-    {
-        corte->x = punto_superior->x;
-    }
-    if (punto_superior->v == punto_inferior->v)
-    {
-        corte->v = punto_superior->v;
-    }
+    // if (punto_superior->x == punto_inferior->x)
+    // {
+    //     corte->x = punto_superior->x;
+    // }
+    // if (punto_superior->u == punto_inferior->u)
+    // {
+    //     corte->u = punto_superior->u;
+    // }
+
     m = (punto_inferior->y - punto_superior->y) / (punto_inferior->x - punto_superior->x);
     corte->x = ((i - punto_superior->y) / m) + punto_superior->x;
+    corte->u = 
     corte->z = 0;
 }
 
-void encontrar_max_min(hiruki *tptr, punto **pgoiptr, punto **perdiptr, punto **pbeheptr)
+void encontrar_max_min(hiruki *tptr, float y1, float y2, float y3, punto **pgoiptr, punto **perdiptr, punto **pbeheptr)
 {
-    if (tptr->p1.y > tptr->p2.y)
+    if (y1 > y2)
     {
-        if (tptr->p1.y > tptr->p3.y)
+        if (y1 > y3)
         {
             *pgoiptr = &(tptr->p1);
-            if (tptr->p2.y > tptr->p3.y)
+            if (y2 > y3)
             {
                 *perdiptr = &(tptr->p2);
                 *pbeheptr = &(tptr->p3);
@@ -160,7 +162,7 @@ void encontrar_max_min(hiruki *tptr, punto **pgoiptr, punto **perdiptr, punto **
             *pbeheptr = &(tptr->p2);
         }
     }
-    else if (tptr->p2.y > tptr->p3.y)
+    else if (y2 > y3)
     {
         *pgoiptr = &(tptr->p2);
         *pbeheptr = &(tptr->p1);
@@ -235,13 +237,13 @@ void dibujar_triangulo(triobj *optr, int i)
     // hemen azpikoa kendu eta triangelua testurarekin marrazten duen kodea sartu.
     // lo que sigue aqui hay que sustituir por el código adecuado que dibuja el triangulo con textura
 
-    encontrar_max_min(tptr, &pgoiptr, &perdiptr, &pbeheptr);
-    encontrar_max_min(tptr, &pgoiptr2, &perdiptr2, &pbeheptr2);
+    encontrar_max_min(tptr, tptr->p1.y, tptr->p2.y, tptr->p3.y, &pgoiptr, &perdiptr, &pbeheptr);
+    encontrar_max_min(tptr, tptr->p1.v, tptr->p2.v, tptr->p3.v, &pgoiptr2, &perdiptr2, &pbeheptr2);
 
     // Ahora vamos a calcular los puntos de corte para dibujar líneas.
 
     rellenar_triangulo(pgoiptr, perdiptr, pbeheptr);
-    rellenar_triangulo (pgoiptr2, perdiptr2, pbeheptr2);
+    
 }
 
 static void marraztu(void)
