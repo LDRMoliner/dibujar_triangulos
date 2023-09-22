@@ -12,6 +12,7 @@
 #include <GL/glut.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "cargar-triangulo.h"
 
 typedef struct mlist
@@ -62,10 +63,14 @@ unsigned char *color_textura(float u, float v)
     int desplazamendua;
     char *lag;
 
-    printf("El u: %f, el v: %f\n", u, v);
-    desplazamendua = 1;
+    int i, j;
+
+    i = trunc (u * dimx);
+    j = trunc ((1-v)*dimy);
+
+    desplazamendua = dimx * u + dimy * (1-v);
     lag = (unsigned char *)bufferra; // pixel on the left and top
-    return (lag + 3 * desplazamendua);
+    return (lag + 3 * (j * dimx + i));
 }
 
 // TODO
@@ -75,10 +80,23 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
 {
     float xkoord, zkoord;
     float u, v;
+    float difu, difv;
     unsigned char r, g, b;
     unsigned char *colorv;
 
     glBegin(GL_POINTS);
+
+    if (c1x != c2x)
+    {
+        difv = (c2v - c1v) / (c2x - c1x);
+        difu = (c2u - c1u) / (c2x - c1x);
+    }
+    else
+    {
+        difv = 0;
+        difu = 0;
+    }
+    
     for (xkoord = c1x, zkoord = c1z, u = c1u, v = c1v; xkoord <= c2x; xkoord++)
     {
         // TODO
@@ -94,6 +112,8 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
         // TODO
         // zkoord, u eta v berriak kalkulatu eskuineko puntuarentzat
         // calcular zkoord, u y v del siguiente pixel
+        u += difu;
+        v += difv;
     }
     glEnd();
 }
@@ -122,7 +142,7 @@ void mxp(punto *pptr, double m[16], punto p)
 
 void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, int i, punto *corte)
 {
-    float m = 0, m2 = 0, m3 = 0;
+    float m = 0, m2 = 0, m3 = 0, m4 = 0;
     // if (punto_superior->x == punto_inferior->x)
     // {
     //     corte->x = punto_superior->x;
@@ -135,10 +155,11 @@ void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, int i, pu
     m = (punto_inferior->y - punto_superior->y) / (punto_inferior->x - punto_superior->x);
     m2 = (punto_inferior->y - punto_superior->y) / (punto_inferior->u - punto_superior->u);
     m3 = (punto_inferior->y - punto_superior->y) / (punto_inferior->v - punto_superior->v);
+    m4 = (punto_inferior->y - punto_superior->y) / (punto_inferior->z - punto_superior->z);
     corte->x = ((i - punto_superior->y) / m) + punto_superior->x;
     corte->u = ((i - punto_superior->y) / m2) + punto_superior->u;
     corte->v = ((i - punto_superior->y) / m3) + punto_superior->v;
-    corte->z = 0;
+    corte->z = ((i - punto_superior->y) / m4) + punto_superior->z;
 }
 
 void encontrar_max_min(hiruki *tptr, float y1, float y2, float y3, punto **pgoiptr, punto **perdiptr, punto **pbeheptr)
