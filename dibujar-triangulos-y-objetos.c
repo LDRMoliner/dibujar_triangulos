@@ -62,6 +62,7 @@ unsigned char *color_textura(float u, float v)
     int desplazamendua;
     char *lag;
 
+    printf("El u: %f, el v: %f\n", u, v);
     desplazamendua = 1;
     lag = (unsigned char *)bufferra; // pixel on the left and top
     return (lag + 3 * desplazamendua);
@@ -121,7 +122,7 @@ void mxp(punto *pptr, double m[16], punto p)
 
 void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, int i, punto *corte)
 {
-    float m = 0;
+    float m = 0, m2 = 0, m3 = 0;
     // if (punto_superior->x == punto_inferior->x)
     // {
     //     corte->x = punto_superior->x;
@@ -132,8 +133,11 @@ void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, int i, pu
     // }
 
     m = (punto_inferior->y - punto_superior->y) / (punto_inferior->x - punto_superior->x);
+    m2 = (punto_inferior->y - punto_superior->y) / (punto_inferior->u - punto_superior->u);
+    m3 = (punto_inferior->y - punto_superior->y) / (punto_inferior->v - punto_superior->v);
     corte->x = ((i - punto_superior->y) / m) + punto_superior->x;
-    corte->u = 
+    corte->u = ((i - punto_superior->y) / m2) + punto_superior->u;
+    corte->v = ((i - punto_superior->y) / m3) + punto_superior->v;
     corte->z = 0;
 }
 
