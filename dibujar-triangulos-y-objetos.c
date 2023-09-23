@@ -78,16 +78,18 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
 {
     float xkoord, zkoord;
     float u, v;
-    float difu, difv;
+    float difu, difv, difz;
     unsigned char r, g, b;
     unsigned char *colorv;
 
     glBegin(GL_POINTS);
 
+    //Calculamos la pendiente de la recta que corta el triángulo, si c1x = c2x evitamos dividir por cero.
     if (c1x != c2x)
     {
         difv = (c2v - c1v) / (c2x - c1x);
         difu = (c2u - c1u) / (c2x - c1x);
+        difz = (c2z - c2z) / (c2x - c1x);
     }
     else
     {
@@ -112,6 +114,7 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
         // calcular zkoord, u y v del siguiente pixel
         u += difu;
         v += difv;
+        zkoord += difz;
     }
     glEnd();
 }
@@ -138,6 +141,7 @@ void mxp(punto *pptr, double m[16], punto p)
     pptr->v = p.v;
 }
 
+
 void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, int i, punto *corte)
 {
     float m = 0, m2 = 0, m3 = 0, m4 = 0;
@@ -152,7 +156,8 @@ void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, int i, pu
     corte->z = ((i - punto_superior->y) / m4) + punto_superior->z;
 }
 
-void encontrar_max_min(hiruki *tptr, float y1, float y2, float y3, punto **pgoiptr, punto **perdiptr, punto **pbeheptr)
+//Función para encontrar los puntos máximo, intermedio y mínimo en tptr. Los guarda, respectivamente, en pgoiptr, perdiptr y pbeheptr.
+void encontrar_max_min(hiruki *tptr, punto **pgoiptr, punto **perdiptr, punto **pbeheptr)
 {
     if (tptr->p1.y > tptr->p2.y)
     {
@@ -197,6 +202,7 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
     punto corte1;
     punto corte2;
 
+    //Dibujamos la mitad superior del triángulo.
     for (i = pgoiptr->y; i > perdiptr->y; i--)
     {
         calcula_punto_corte(pgoiptr, pbeheptr, i, &corte1);
@@ -207,6 +213,7 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
             dibujar_linea_z(i, corte2.x, corte2.z, corte2.u, corte2.v, corte1.x, corte1.z, corte1.u, corte1.v);
     }
 
+    //Dibujamos la mitad inferior del triángulo.
     for (i = perdiptr->y; i > pbeheptr->y; i--)
     {
         calcula_punto_corte(perdiptr, pbeheptr, i, &corte1);
@@ -250,9 +257,9 @@ void dibujar_triangulo(triobj *optr, int i)
    
     //Encontramos el punto máximo, mínimo, y medio del triángulo.
 
-    encontrar_max_min(tptr, tptr->p1.y, tptr->p2.y, tptr->p3.y, &pgoiptr, &perdiptr, &pbeheptr);
+    encontrar_max_min(tptr, &pgoiptr, &perdiptr, &pbeheptr);
 
-    // Ahora vamos a calcular los puntos de corte para dibujar líneas.
+    // Llamada a función rellenar triángulo.
 
     rellenar_triangulo(pgoiptr, perdiptr, pbeheptr);
     
