@@ -1,0 +1,5 @@
+\contentsline {section}{\numberline {1}Objetivos de la aplicación.}{2}{}%
+\contentsline {section}{\numberline {2}Interacción con el/la usuario/a}{2}{}%
+\contentsline {section}{\numberline {3}Herramientas utilizadas.}{2}{}%
+\contentsline {section}{\numberline {4}Uso de la aplicación}{3}{}%
+\contentsline {section}{\numberline {5}Código C}{4}{}%
