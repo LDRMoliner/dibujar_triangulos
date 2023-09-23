@@ -154,12 +154,12 @@ void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, int i, pu
 
 void encontrar_max_min(hiruki *tptr, float y1, float y2, float y3, punto **pgoiptr, punto **perdiptr, punto **pbeheptr)
 {
-    if (y1 > y2)
+    if (tptr->p1.y > tptr->p2.y)
     {
-        if (y1 > y3)
+        if (tptr->p1.y > tptr->p3.y)
         {
             *pgoiptr = &(tptr->p1);
-            if (y2 > y3)
+            if (tptr->p2.y > tptr->p3.y)
             {
                 *perdiptr = &(tptr->p2);
                 *pbeheptr = &(tptr->p3);
@@ -177,7 +177,7 @@ void encontrar_max_min(hiruki *tptr, float y1, float y2, float y3, punto **pgoip
             *pbeheptr = &(tptr->p2);
         }
     }
-    else if (y2 > y3)
+    else if (tptr->p2.y > tptr->p3.y)
     {
         *pgoiptr = &(tptr->p2);
         *pbeheptr = &(tptr->p1);
@@ -247,13 +247,10 @@ void dibujar_triangulo(triobj *optr, int i)
         glEnd();
         return;
     }
-    //  else
-    // TODO
-    // hemen azpikoa kendu eta triangelua testurarekin marrazten duen kodea sartu.
-    // lo que sigue aqui hay que sustituir por el código adecuado que dibuja el triangulo con textura
+   
+    //Encontramos el punto máximo, mínimo, y medio del triángulo.
 
     encontrar_max_min(tptr, tptr->p1.y, tptr->p2.y, tptr->p3.y, &pgoiptr, &perdiptr, &pbeheptr);
-    encontrar_max_min(tptr, tptr->p1.v, tptr->p2.v, tptr->p3.v, &pgoiptr2, &perdiptr2, &pbeheptr2);
 
     // Ahora vamos a calcular los puntos de corte para dibujar líneas.
 
