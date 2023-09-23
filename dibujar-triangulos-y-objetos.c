@@ -60,17 +60,15 @@ void objektuari_aldaketa_sartu_esk(double m[16])
 // debe devolver el pointer correspondiente a las coordenadas u y v
 unsigned char *color_textura(float u, float v)
 {
-    int desplazamendua;
     char *lag;
 
-    int i, j;
+    int desplazamiento_u, desplazamiento_v;
 
-    i = trunc (u * dimx);
-    j = trunc ((1-v)*dimy);
+    desplazamiento_u = trunc (u * dimx);
+    desplazamiento_v = trunc ((1-v)*dimy);
 
-    desplazamendua = dimx * u + dimy * (1-v);
     lag = (unsigned char *)bufferra; // pixel on the left and top
-    return (lag + 3 * (j * dimx + i));
+    return (lag + 3 * (desplazamiento_v * dimx + desplazamiento_u));
 }
 
 // TODO
@@ -143,14 +141,6 @@ void mxp(punto *pptr, double m[16], punto p)
 void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, int i, punto *corte)
 {
     float m = 0, m2 = 0, m3 = 0, m4 = 0;
-    // if (punto_superior->x == punto_inferior->x)
-    // {
-    //     corte->x = punto_superior->x;
-    // }
-    // if (punto_superior->u == punto_inferior->u)
-    // {
-    //     corte->u = punto_superior->u;
-    // }
 
     m = (punto_inferior->y - punto_superior->y) / (punto_inferior->x - punto_superior->x);
     m2 = (punto_inferior->y - punto_superior->y) / (punto_inferior->u - punto_superior->u);
