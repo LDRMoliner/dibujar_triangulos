@@ -142,14 +142,15 @@ void mxp(punto *pptr, double m[16], punto p)
 }
 
 
-void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, int i, punto *corte)
+void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, float i, punto *corte)
 {
-    float m = 0, m2 = 0, m3 = 0, m4 = 0;
+    float m = 0, m2 = 0, m3 = 0, m4 = 0, delta_y;
 
-    m = (punto_inferior->y - punto_superior->y) / (punto_inferior->x - punto_superior->x);
-    m2 = (punto_inferior->y - punto_superior->y) / (punto_inferior->u - punto_superior->u);
-    m3 = (punto_inferior->y - punto_superior->y) / (punto_inferior->v - punto_superior->v);
-    m4 = (punto_inferior->y - punto_superior->y) / (punto_inferior->z - punto_superior->z);
+    delta_y = punto_inferior->y - punto_superior->y;
+    m = (delta_y) / (punto_inferior->x - punto_superior->x);
+    m2 = (delta_y) / (punto_inferior->u - punto_superior->u);
+    m3 = (delta_y) / (punto_inferior->v - punto_superior->v);
+    m4 = (delta_y) / (punto_inferior->z - punto_superior->z);
     corte->x = ((i - punto_superior->y) / m) + punto_superior->x;
     corte->u = ((i - punto_superior->y) / m2) + punto_superior->u;
     corte->v = ((i - punto_superior->y) / m3) + punto_superior->v;
@@ -159,7 +160,7 @@ void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, int i, pu
 //Función para encontrar los puntos máximo, intermedio y mínimo en tptr. Los guarda, respectivamente, en pgoiptr, perdiptr y pbeheptr.
 void encontrar_max_min(hiruki *tptr, punto **pgoiptr, punto **perdiptr, punto **pbeheptr)
 {
-    if (tptr->p1.y > tptr->p2.y)
+    if (tptr->p1.y >= tptr->p2.y)
     {
         if (tptr->p1.y > tptr->p3.y)
         {
@@ -182,8 +183,9 @@ void encontrar_max_min(hiruki *tptr, punto **pgoiptr, punto **perdiptr, punto **
             *pbeheptr = &(tptr->p2);
         }
     }
-    else if (tptr->p2.y > tptr->p3.y)
+    else if (tptr->p2.y >= tptr->p3.y)
     {
+
         *pgoiptr = &(tptr->p2);
         *pbeheptr = &(tptr->p1);
         *perdiptr = &(tptr->p3);
@@ -198,7 +200,7 @@ void encontrar_max_min(hiruki *tptr, punto **pgoiptr, punto **perdiptr, punto **
 
 void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
 {
-    int i;
+    int i = 0;
     punto corte1;
     punto corte2;
 
