@@ -134,11 +134,12 @@ void print_matrizea(char *str)
 // para más adelante
 void mxp(punto *pptr, double m[16], punto p)
 {
-    pptr->x = p.x;
-    pptr->y = p.y;
-    pptr->z = p.z;
+    pptr->x = m[0]*p.x+m[1]*p.y+m[2]*p.z+m[3];
+    pptr->y = m[4]*p.x+m[5]*p.y+m[6]*p.z+m[7];
+    pptr->z = m[8]*p.x+m[9]*p.y+m[10]*p.z+m[11];
     pptr->u = p.u;
     pptr->v = p.v;
+    
 }
 
 
