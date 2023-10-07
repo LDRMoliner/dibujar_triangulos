@@ -214,7 +214,7 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
     {
         calcula_punto_corte(pgoiptr, pbeheptr, i, &corte1);
         calcula_punto_corte(pgoiptr, perdiptr, i, &corte2);
-   
+
         if (corte1.x <= corte2.x)
             dibujar_linea_z(i, corte1.x, corte1.z, corte1.u, corte1.v, corte2.x, corte2.z, corte2.u, corte2.v);
         else
@@ -405,36 +405,13 @@ void escribir_matriz(double m[16])
     }
 }
 
-void x_aldaketa(int dir)
+void transformacion_principal(double m[16])
 {
     double resultado[16];
-    double m2[16];
-    int exponent;
     mlist *new_m = (mlist *)malloc(sizeof(mlist));
     int i = 0;
-    for (i = 0; i < 16; i++)
-    {
-        m2[i] = 0;
-    }
-    m2[0] = 1;
-    m2[5] = 1;
-    m2[10] = 1;
-    m2[15] = 1;
 
-    if (dir == 1)
-    {
-        exponent = 1;
-    }
-    else
-    {
-        exponent = -1;
-    }
-    m2[5] = cos(exponent * 0.075);
-    m2[6] = -sin(exponent * 0.075);
-    m2[9] = sin(exponent * 0.075);
-    m2[10] = cos(exponent * 0.075);
-
-    mxm(resultado, m2, sel_ptr->mptr->m);
+    mxm(resultado, m, sel_ptr->mptr->m);
 
     escribir_matriz(resultado);
     // escribir_matriz(resultado);
@@ -445,91 +422,75 @@ void x_aldaketa(int dir)
     escribir_matriz(new_m->m);
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
-    // print_matrizea("");
+}
+void x_aldaketa(int dir)
+{
+    /**
+     * Creamos la matriz con la que vamos a multiplicar para lograr la rotación,
+     * y llamamos a la función transformación principal.
+     */
+    double m[16];
+    int exponent = 0;
+    int i = 0;
+    for (i = 0; i < 16; i++)
+    {
+        m[i] = 0;
+    }
+
+    m[0] = 1;
+    m[15] = 1;
+
+    exponent = pow(-1, !dir);
+    m[5] = cos(exponent * 0.075);
+    m[6] = -sin(exponent * 0.075);
+    m[9] = sin(exponent * 0.075);
+    m[10] = cos(exponent * 0.075);
+    transformacion_principal(m);
 }
 
 void y_aldaketa(int dir)
 {
-    double resultado[16];
-    double m2[16];
-    int exponent;
-    mlist *new_m = (mlist *)malloc(sizeof(mlist));
+    double m[16];
+    int exponent = 0;
     int i = 0;
     for (i = 0; i < 16; i++)
     {
-        m2[i] = 0;
-    }
-    m2[0] = 1;
-    m2[5] = 1;
-    m2[10] = 1;
-    m2[15] = 1;
-
-    if (dir == 1)
-    {
-        exponent = 1;
-    }
-    else
-    {
-        exponent = -1;
+        m[i] = 0;
     }
 
-    m2[0] = cos(exponent * 0.075);
-    m2[2] = -sin(exponent * 0.075);
-    m2[8] = sin(exponent * 0.075);
-    m2[10] = cos(exponent * 0.075);
+    m[5] = 1;
+    m[15] = 1;
 
-    mxm(resultado, sel_ptr->mptr->m, m2);
-
-    for (i = 0; i < 16; i++)
-    {
-        new_m->m[i] = resultado[i];
-    }
-
-    new_m->hptr = sel_ptr->mptr;
-    sel_ptr->mptr = new_m;
-    // print_matrizea("");
+    exponent = pow(-1, !dir);
+    m[0] = cos(exponent * 0.075);
+    m[2] = sin(exponent * 0.075);
+    m[8] = -sin(exponent * 0.075);
+    m[10] = cos(exponent * 0.075);
+    transformacion_principal(m);
 }
 
 void z_aldaketa(int dir)
 {
 
-    double resultado[16];
-    double m2[16];
-    int exponent;
-    mlist *new_m = (mlist *)malloc(sizeof(mlist));
+    double m[16];
+    int exponent = 0;
     int i = 0;
     for (i = 0; i < 16; i++)
     {
-        m2[i] = 0;
-    }
-    m2[0] = 1;
-    m2[5] = 1;
-    m2[10] = 1;
-    m2[15] = 1;
-
-    if (dir == 1)
-    {
-        exponent = 1;
-    }
-    else
-    {
-        exponent = -1;
+        m[i] = 0;
     }
 
-    m2[0] = cos(exponent * 0.075);
-    m2[1] = -sin(exponent * 0.075);
-    m2[4] = sin(exponent * 0.075);
-    m2[5] = cos(exponent * 0.075);
+    m[0] = 1;
+    m[15] = 1;
 
-    mxm(resultado, sel_ptr->mptr->m, m2);
+    exponent = pow(-1, !dir);
 
-    for (i = 0; i < 16; i++)
-    {
-        new_m->m[i] = resultado[i];
-    }
-    escribir_matriz(new_m->m);
-    new_m->hptr = sel_ptr->mptr;
-    sel_ptr->mptr = new_m;
+    m[0] = cos(exponent * 0.075);
+    m[1] = -sin(exponent * 0.075);
+    m[4] = sin(exponent * 0.075);
+    m[5] = cos(exponent * 0.075);
+    transformacion_principal(m);
+
 }
 
 void undo()
