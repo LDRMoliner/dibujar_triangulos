@@ -90,12 +90,13 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
     {
         difv = (c2v - c1v) / (c2x - c1x);
         difu = (c2u - c1u) / (c2x - c1x);
-        difz = (c2z - c2z) / (c2x - c1x);
+        difz = (c2z - c1z) / (c2x - c1x);
     }
     else
     {
         difv = 0;
         difu = 0;
+        difz = 0;
     }
 
     for (xkoord = c1x, zkoord = c1z, u = c1u, v = c1v; xkoord <= c2x; xkoord++)
@@ -135,7 +136,7 @@ void print_matrizea(char *str)
 // para más adelante
 void mxp(punto *pptr, double m[16], punto p)
 {
-    print_matrizea("");
+    // print_matrizea("");
     pptr->x = m[0] * p.x + m[1] * p.y + m[2] * p.z + m[3];
     pptr->y = m[4] * p.x + m[5] * p.y + m[6] * p.z + m[7];
     pptr->z = m[8] * p.x + m[9] * p.y + m[10] * p.z + m[11];
@@ -147,11 +148,20 @@ void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, float i, 
 {
     float m = 0, m2 = 0, m3 = 0, m4 = 0, delta_y;
     delta_y = punto_inferior->y - punto_superior->y;
-    m = (delta_y) / (punto_inferior->x - punto_superior->x);
+    if (punto_inferior->x != punto_superior->x)
+    {
+        m = (delta_y) / (punto_inferior->x - punto_superior->x);
+        corte->x = ((i - punto_superior->y) / m) + punto_superior->x;
+    }
+    else
+    {
+        corte->x = punto_superior->x;
+    }
     m2 = (delta_y) / (punto_inferior->u - punto_superior->u);
+
     m3 = (delta_y) / (punto_inferior->v - punto_superior->v);
     m4 = (delta_y) / (punto_inferior->z - punto_superior->z);
-    corte->x = ((i - punto_superior->y) / m) + punto_superior->x;
+
     corte->u = ((i - punto_superior->y) / m2) + punto_superior->u;
     corte->v = ((i - punto_superior->y) / m3) + punto_superior->v;
     corte->z = ((i - punto_superior->y) / m4) + punto_superior->z;
@@ -165,10 +175,11 @@ void encontrar_max_min(punto **pgoiptr, punto **perdiptr, punto **pbeheptr)
     punto *aux_min;
     punto *aux_med;
     if ((*pgoiptr)->y > (*perdiptr)->y)
-    {   
+    {
         aux_max = *pgoiptr;
         aux_min = *perdiptr;
-    }else
+    }
+    else
     {
         aux_max = *perdiptr;
         aux_min = *pgoiptr;
@@ -190,7 +201,6 @@ void encontrar_max_min(punto **pgoiptr, punto **perdiptr, punto **pbeheptr)
     *pgoiptr = aux_max;
     *perdiptr = aux_med;
     *pbeheptr = aux_min;
-      
 }
 
 void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
@@ -199,16 +209,19 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
     punto corte1;
     punto corte2;
     // Dibujamos la mitad superior del triángulo.
+
     for (i = pgoiptr->y; i > perdiptr->y; i--)
     {
         calcula_punto_corte(pgoiptr, pbeheptr, i, &corte1);
         calcula_punto_corte(pgoiptr, perdiptr, i, &corte2);
+   
         if (corte1.x <= corte2.x)
             dibujar_linea_z(i, corte1.x, corte1.z, corte1.u, corte1.v, corte2.x, corte2.z, corte2.u, corte2.v);
         else
             dibujar_linea_z(i, corte2.x, corte2.z, corte2.u, corte2.v, corte1.x, corte1.z, corte1.u, corte1.v);
     }
     // Dibujamos la mitad inferior del triángulo.
+    printf("lo hemos dejado en la altura: %f\n", i);
     for (i = perdiptr->y; i > pbeheptr->y; i--)
     {
         calcula_punto_corte(perdiptr, pbeheptr, i, &corte1);
@@ -237,11 +250,11 @@ void dibujar_triangulo(triobj *optr, int i)
     if (i >= optr->num_triangles)
         return;
     tptr = optr->triptr + i;
-    /**
-     * printf("p1: %f, %f, %f, %f, %f\n", tptr->p1.x, tptr->p1.y, tptr->p1.z, tptr->p1.u, tptr->p1.v);
-    *printf("p2: %f, %f, %f, %f, %f\n", tptr->p2.x, tptr->p2.y, tptr->p2.z, tptr->p2.u, tptr->p2.v);
-    *printf("p3: %f, %f, %f, %f, %f\n", tptr->p3.x, tptr->p3.y, tptr->p3.z, tptr->p3.u, tptr->p3.v);
-    */
+
+    // printf("p1: %f, %f, %f, %f, %f\n", tptr->p1.x, tptr->p1.y, tptr->p1.z, tptr->p1.u, tptr->p1.v);
+    // printf("p2: %f, %f, %f, %f, %f\n", tptr->p2.x, tptr->p2.y, tptr->p2.z, tptr->p2.u, tptr->p2.v);
+    // printf("p3: %f, %f, %f, %f, %f\n", tptr->p3.x, tptr->p3.y, tptr->p3.z, tptr->p3.u, tptr->p3.v);
+
     mxp(&p1, optr->mptr->m, tptr->p1);
     mxp(&p2, optr->mptr->m, tptr->p2);
     mxp(&p3, optr->mptr->m, tptr->p3);
@@ -267,7 +280,7 @@ void dibujar_triangulo(triobj *optr, int i)
     encontrar_max_min(&pgoiptr, &perdiptr, &pbeheptr);
     printf("pgoi: %f, %f, %f, %f, %f\n", pgoiptr->x, pgoiptr->y, pgoiptr->z, pgoiptr->u, pgoiptr->v);
     printf("perdi: %f, %f, %f, %f, %f\n", perdiptr->x, perdiptr->y, perdiptr->z, perdiptr->u, perdiptr->v);
-    printf("pbehe: %f, %f, %f, %f, %f\n", pbeheptr->x, pbeheptr->y, pbeheptr->z, pbeheptr->u, pbeheptr->u);
+    printf("pbehe: %f, %f, %f, %f, %f\n", pbeheptr->x, pbeheptr->y, pbeheptr->z, pbeheptr->u, pbeheptr->v);
 
     // Llamada a función rellenar triángulo.
 
@@ -376,9 +389,19 @@ void mxm(double *resultado, double operando_izquierdo[16], double operando_derec
             {
                 res += operando_izquierdo[i * 4 + k] * operando_derecho[k * 4 + j];
             }
-            //printf("res: %f\n", res);
+            // printf("res: %f\n", res);
             resultado[i * 4 + j] = res;
         }
+    }
+}
+void escribir_matriz(double m[16])
+{
+    int i;
+    for (i = 0; i < 16; i++)
+    {
+        printf("%f ", m[i]);
+        if (i % 4 == 3)
+            printf("\n");
     }
 }
 
@@ -386,6 +409,7 @@ void x_aldaketa(int dir)
 {
     double resultado[16];
     double m2[16];
+    int exponent;
     mlist *new_m = (mlist *)malloc(sizeof(mlist));
     int i = 0;
     for (i = 0; i < 16; i++)
@@ -397,15 +421,65 @@ void x_aldaketa(int dir)
     m2[10] = 1;
     m2[15] = 1;
 
+    if (dir == 1)
+    {
+        exponent = 1;
+    }
+    else
+    {
+        exponent = -1;
+    }
+    m2[5] = cos(exponent * 0.075);
+    m2[6] = -sin(exponent * 0.075);
+    m2[9] = sin(exponent * 0.075);
+    m2[10] = cos(exponent * 0.075);
 
-    m2[5] = cos(0.050);
-    m2[6] = -sin(0.050);
-    m2[9] = sin(0.050);
-    m2[10] = cos(0.050);
+    mxm(resultado, m2, sel_ptr->mptr->m);
 
-    if (dir) mxm (resultado, m2, sel_ptr->mptr->m);
-    else mxm (resultado, sel_ptr->mptr->m, m2 );
-    
+    escribir_matriz(resultado);
+    // escribir_matriz(resultado);
+    for (i = 0; i < 16; i++)
+    {
+        new_m->m[i] = resultado[i];
+    }
+    escribir_matriz(new_m->m);
+    new_m->hptr = sel_ptr->mptr;
+    sel_ptr->mptr = new_m;
+    // print_matrizea("");
+}
+
+void y_aldaketa(int dir)
+{
+    double resultado[16];
+    double m2[16];
+    int exponent;
+    mlist *new_m = (mlist *)malloc(sizeof(mlist));
+    int i = 0;
+    for (i = 0; i < 16; i++)
+    {
+        m2[i] = 0;
+    }
+    m2[0] = 1;
+    m2[5] = 1;
+    m2[8] = 1;
+    m2[15] = 1;
+
+    if (dir == 1)
+    {
+        exponent = 1;
+    }
+    else
+    {
+        exponent = -1;
+    }
+
+    m2[0] = cos(exponent * 0.075);
+    m2[2] = -sin(exponent * 0.075);
+    m2[8] = sin(exponent * 0.075);
+    m2[10] = cos(exponent * 0.075);
+
+    mxm(resultado, sel_ptr->mptr->m, m2);
+
     for (i = 0; i < 16; i++)
     {
         new_m->m[i] = resultado[i];
@@ -413,15 +487,49 @@ void x_aldaketa(int dir)
 
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
-    print_matrizea("");
-}
-
-void y_aldaketa(int dir)
-{
+    // print_matrizea("");
 }
 
 void z_aldaketa(int dir)
 {
+
+    double resultado[16];
+    double m2[16];
+    int exponent;
+    mlist *new_m = (mlist *)malloc(sizeof(mlist));
+    int i = 0;
+    for (i = 0; i < 16; i++)
+    {
+        m2[i] = 0;
+    }
+    m2[0] = 1;
+    m2[5] = 1;
+    m2[8] = 1;
+    m2[15] = 1;
+
+    if (dir == 1)
+    {
+        exponent = 1;
+    }
+    else
+    {
+        exponent = -1;
+    }
+
+    m2[0] = cos(exponent * 0.075);
+    m2[1] = -sin(exponent * 0.075);
+    m2[4] = sin(exponent * 0.075);
+    m2[5] = cos(exponent * 0.075);
+
+    mxm(resultado, sel_ptr->mptr->m, m2);
+
+    for (i = 0; i < 16; i++)
+    {
+        new_m->m[i] = resultado[i];
+    }
+
+    new_m->hptr = sel_ptr->mptr;
+    sel_ptr->mptr = new_m;
 }
 
 void undo()
@@ -497,7 +605,6 @@ static void teklatua(unsigned char key, int x, int y)
         z_aldaketa(1);
         break;
     case 'X':
-        printf ("X\n");
         x_aldaketa(0);
         break;
     case 'Y':
@@ -585,9 +692,9 @@ int main(int argc, char **argv)
     glClearColor(0.0f, 0.0f, 0.7f, 1.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
-    denak = 1;
+    denak = 0;
     lineak = 0;
-    objektuak = 1;
+    objektuak = 0;
     foptr = 0;
     sel_ptr = 0;
     aldaketa = 'r';
