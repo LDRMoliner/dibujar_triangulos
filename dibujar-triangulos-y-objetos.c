@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <malloc.h>
 #include "cargar-triangulo.h"
 
 typedef struct mlist
@@ -64,8 +65,8 @@ unsigned char *color_textura(float u, float v)
 
     int desplazamiento_u, desplazamiento_v;
 
-    desplazamiento_u = trunc (u * dimx);
-    desplazamiento_v = trunc ((1-v)*dimy);
+    desplazamiento_u = trunc(u * dimx);
+    desplazamiento_v = trunc((1 - v) * dimy);
 
     lag = (unsigned char *)bufferra; // pixel on the left and top
     return (lag + 3 * (desplazamiento_v * dimx + desplazamiento_u));
@@ -84,7 +85,7 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
 
     glBegin(GL_POINTS);
 
-    //Calculamos la pendiente de la recta que corta el triángulo, si c1x = c2x evitamos dividir por cero.
+    // Calculamos la pendiente de la recta que corta el triángulo, si c1x = c2x evitamos dividir por cero.
     if (c1x != c2x)
     {
         difv = (c2v - c1v) / (c2x - c1x);
@@ -96,7 +97,7 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
         difv = 0;
         difu = 0;
     }
-    
+
     for (xkoord = c1x, zkoord = c1z, u = c1u, v = c1v; xkoord <= c2x; xkoord++)
     {
         // TODO
@@ -134,19 +135,17 @@ void print_matrizea(char *str)
 // para más adelante
 void mxp(punto *pptr, double m[16], punto p)
 {
-    pptr->x = m[0]*p.x+m[1]*p.y+m[2]*p.z+m[3];
-    pptr->y = m[4]*p.x+m[5]*p.y+m[6]*p.z+m[7];
-    pptr->z = m[8]*p.x+m[9]*p.y+m[10]*p.z+m[11];
+    print_matrizea("");
+    pptr->x = m[0] * p.x + m[1] * p.y + m[2] * p.z + m[3];
+    pptr->y = m[4] * p.x + m[5] * p.y + m[6] * p.z + m[7];
+    pptr->z = m[8] * p.x + m[9] * p.y + m[10] * p.z + m[11];
     pptr->u = p.u;
     pptr->v = p.v;
-    
 }
-
 
 void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, float i, punto *corte)
 {
     float m = 0, m2 = 0, m3 = 0, m4 = 0, delta_y;
-
     delta_y = punto_inferior->y - punto_superior->y;
     m = (delta_y) / (punto_inferior->x - punto_superior->x);
     m2 = (delta_y) / (punto_inferior->u - punto_superior->u);
@@ -158,54 +157,48 @@ void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, float i, 
     corte->z = ((i - punto_superior->y) / m4) + punto_superior->z;
 }
 
-//Función para encontrar los puntos máximo, intermedio y mínimo en tptr. Los guarda, respectivamente, en pgoiptr, perdiptr y pbeheptr.
-void encontrar_max_min(hiruki *tptr, punto **pgoiptr, punto **perdiptr, punto **pbeheptr)
+// Función para encontrar los puntos máximo, intermedio y mínimo en tptr. Los guarda, respectivamente, en pgoiptr, perdiptr y pbeheptr.
+void encontrar_max_min(punto **pgoiptr, punto **perdiptr, punto **pbeheptr)
 {
-    if (tptr->p1.y >= tptr->p2.y)
-    {
-        if (tptr->p1.y > tptr->p3.y)
-        {
-            *pgoiptr = &(tptr->p1);
-            if (tptr->p2.y > tptr->p3.y)
-            {
-                *perdiptr = &(tptr->p2);
-                *pbeheptr = &(tptr->p3);
-            }
-            else
-            {
-                *perdiptr = &(tptr->p3);
-                *pbeheptr = &(tptr->p2);
-            }
-        }
-        else
-        {
-            *pgoiptr = &(tptr->p3);
-            *perdiptr = &(tptr->p1);
-            *pbeheptr = &(tptr->p2);
-        }
-    }
-    else if (tptr->p2.y >= tptr->p3.y)
-    {
 
-        *pgoiptr = &(tptr->p2);
-        *pbeheptr = &(tptr->p1);
-        *perdiptr = &(tptr->p3);
+    punto *aux_max;
+    punto *aux_min;
+    punto *aux_med;
+    if ((*pgoiptr)->y > (*perdiptr)->y)
+    {   
+        aux_max = *pgoiptr;
+        aux_min = *perdiptr;
+    }else
+    {
+        aux_max = *perdiptr;
+        aux_min = *pgoiptr;
+    }
+    if ((*pbeheptr)->y > aux_max->y)
+    {
+        aux_med = aux_max;
+        aux_max = *pbeheptr;
+    }
+    else if ((*pbeheptr)->y < aux_min->y)
+    {
+        aux_med = aux_min;
+        aux_min = *pbeheptr;
     }
     else
     {
-        *pgoiptr = &(tptr->p3);
-        *pbeheptr = &(tptr->p1);
-        *perdiptr = &(tptr->p2);
+        aux_med = *pbeheptr;
     }
+    *pgoiptr = aux_max;
+    *perdiptr = aux_med;
+    *pbeheptr = aux_min;
+      
 }
 
 void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
 {
-    int i = 0;
+    float i = 0;
     punto corte1;
     punto corte2;
-
-    //Dibujamos la mitad superior del triángulo.
+    // Dibujamos la mitad superior del triángulo.
     for (i = pgoiptr->y; i > perdiptr->y; i--)
     {
         calcula_punto_corte(pgoiptr, pbeheptr, i, &corte1);
@@ -215,8 +208,7 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
         else
             dibujar_linea_z(i, corte2.x, corte2.z, corte2.u, corte2.v, corte1.x, corte1.z, corte1.u, corte1.v);
     }
-
-    //Dibujamos la mitad inferior del triángulo.
+    // Dibujamos la mitad inferior del triángulo.
     for (i = perdiptr->y; i > pbeheptr->y; i--)
     {
         calcula_punto_corte(perdiptr, pbeheptr, i, &corte1);
@@ -245,9 +237,17 @@ void dibujar_triangulo(triobj *optr, int i)
     if (i >= optr->num_triangles)
         return;
     tptr = optr->triptr + i;
+    /**
+     * printf("p1: %f, %f, %f, %f, %f\n", tptr->p1.x, tptr->p1.y, tptr->p1.z, tptr->p1.u, tptr->p1.v);
+    *printf("p2: %f, %f, %f, %f, %f\n", tptr->p2.x, tptr->p2.y, tptr->p2.z, tptr->p2.u, tptr->p2.v);
+    *printf("p3: %f, %f, %f, %f, %f\n", tptr->p3.x, tptr->p3.y, tptr->p3.z, tptr->p3.u, tptr->p3.v);
+    */
     mxp(&p1, optr->mptr->m, tptr->p1);
     mxp(&p2, optr->mptr->m, tptr->p2);
     mxp(&p3, optr->mptr->m, tptr->p3);
+    printf("p1 actual: %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v);
+    printf("p2 actual: %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v);
+    printf("p3 actual: %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v);
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
@@ -257,15 +257,21 @@ void dibujar_triangulo(triobj *optr, int i)
         glEnd();
         return;
     }
-   
-    //Encontramos el punto máximo, mínimo, y medio del triángulo.
 
-    encontrar_max_min(tptr, &pgoiptr, &perdiptr, &pbeheptr);
+    // Encontramos el punto máximo, mínimo, y medio del triángulo.
+
+    pgoiptr = &p1;
+    perdiptr = &p2;
+    pbeheptr = &p3;
+
+    encontrar_max_min(&pgoiptr, &perdiptr, &pbeheptr);
+    printf("pgoi: %f, %f, %f, %f, %f\n", pgoiptr->x, pgoiptr->y, pgoiptr->z, pgoiptr->u, pgoiptr->v);
+    printf("perdi: %f, %f, %f, %f, %f\n", perdiptr->x, perdiptr->y, perdiptr->z, perdiptr->u, perdiptr->v);
+    printf("pbehe: %f, %f, %f, %f, %f\n", pbeheptr->x, pbeheptr->y, pbeheptr->z, pbeheptr->u, pbeheptr->u);
 
     // Llamada a función rellenar triángulo.
 
     rellenar_triangulo(pgoiptr, perdiptr, pbeheptr);
-    
 }
 
 static void marraztu(void)
@@ -357,8 +363,59 @@ void read_from_file(char *fitx)
     printf("datuak irakurrita\nLecura finalizada\n");
 }
 
+void mxm(double *resultado, double operando_izquierdo[16], double operando_derecho[16])
+{
+    int i, j, k;
+    double res;
+    for (i = 0; i < 4; i++)
+    {
+        for (j = 0; j < 4; j++)
+        {
+            res = 0.0;
+            for (k = 0; k < 4; k++)
+            {
+                res += operando_izquierdo[i * 4 + k] * operando_derecho[k * 4 + j];
+            }
+            //printf("res: %f\n", res);
+            resultado[i * 4 + j] = res;
+        }
+    }
+}
+
 void x_aldaketa(int dir)
 {
+    double resultado[16];
+    double m2[16];
+    mlist *new_m = (mlist *)malloc(sizeof(mlist));
+    int i = 0, j = 0;
+    for (i = 0; i < 16; i++)
+    {
+        resultado[i] = 0;
+        m2[i] = 0;
+    }
+    m2[0] = 1;
+    m2[5] = 1;
+    m2[10] = 1;
+    m2[15] = 1;
+    resultado[0] = 1;
+    resultado[5] = 1;
+    resultado[10] = 1;
+    resultado[15] = 1;
+
+    m2[5] = cos(0.050);
+    m2[6] = -sin(0.050);
+    m2[9] = sin(0.050);
+    m2[10] = cos(0.050);
+
+    mxm (resultado, sel_ptr->mptr->m, m2);
+    
+    for (i = 0; i < 16; i++)
+    {
+        new_m->m[i] = resultado[i];
+    }
+    
+    new_m->hptr = sel_ptr->mptr;
+    sel_ptr->mptr = new_m;
 }
 
 void y_aldaketa(int dir)
@@ -428,6 +485,9 @@ static void teklatua(unsigned char key, int x, int y)
             ald_lokala = 0;
         else
             ald_lokala = 1;
+        break;
+    case 's':
+        aldaketa = 's';
         break;
     case 'x':
         x_aldaketa(1);
@@ -511,7 +571,7 @@ int main(int argc, char **argv)
     glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(500, 500);
     glutInitWindowPosition(100, 100);
-    glutCreateWindow("KBG/GO praktika");
+    glutCreateWindow("Practica GCC");
 
     glutDisplayFunc(marraztu);
     glutKeyboardFunc(teklatua);
@@ -526,9 +586,9 @@ int main(int argc, char **argv)
     glClearColor(0.0f, 0.0f, 0.7f, 1.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
-    denak = 0;
+    denak = 1;
     lineak = 0;
-    objektuak = 0;
+    objektuak = 1;
     foptr = 0;
     sel_ptr = 0;
     aldaketa = 'r';
