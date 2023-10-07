@@ -387,35 +387,33 @@ void x_aldaketa(int dir)
     double resultado[16];
     double m2[16];
     mlist *new_m = (mlist *)malloc(sizeof(mlist));
-    int i = 0, j = 0;
+    int i = 0;
     for (i = 0; i < 16; i++)
     {
-        resultado[i] = 0;
         m2[i] = 0;
     }
     m2[0] = 1;
     m2[5] = 1;
     m2[10] = 1;
     m2[15] = 1;
-    resultado[0] = 1;
-    resultado[5] = 1;
-    resultado[10] = 1;
-    resultado[15] = 1;
+
 
     m2[5] = cos(0.050);
     m2[6] = -sin(0.050);
     m2[9] = sin(0.050);
     m2[10] = cos(0.050);
 
-    mxm (resultado, sel_ptr->mptr->m, m2);
+    if (dir) mxm (resultado, m2, sel_ptr->mptr->m);
+    else mxm (resultado, sel_ptr->mptr->m, m2 );
     
     for (i = 0; i < 16; i++)
     {
         new_m->m[i] = resultado[i];
     }
-    
+
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
+    print_matrizea("");
 }
 
 void y_aldaketa(int dir)
@@ -499,6 +497,7 @@ static void teklatua(unsigned char key, int x, int y)
         z_aldaketa(1);
         break;
     case 'X':
+        printf ("X\n");
         x_aldaketa(0);
         break;
     case 'Y':
