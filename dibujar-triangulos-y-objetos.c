@@ -534,6 +534,10 @@ void z_aldaketa(int dir)
 
 void undo()
 {
+    if (sel_ptr->mptr->hptr != NULL)
+    {
+        sel_ptr->mptr = sel_ptr->mptr->hptr;
+    }
 }
 
 // This function will be called whenever the user pushes one key
