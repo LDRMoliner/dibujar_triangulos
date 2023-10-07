@@ -461,7 +461,7 @@ void y_aldaketa(int dir)
     }
     m2[0] = 1;
     m2[5] = 1;
-    m2[8] = 1;
+    m2[10] = 1;
     m2[15] = 1;
 
     if (dir == 1)
@@ -504,7 +504,7 @@ void z_aldaketa(int dir)
     }
     m2[0] = 1;
     m2[5] = 1;
-    m2[8] = 1;
+    m2[10] = 1;
     m2[15] = 1;
 
     if (dir == 1)
@@ -527,7 +527,7 @@ void z_aldaketa(int dir)
     {
         new_m->m[i] = resultado[i];
     }
-
+    escribir_matriz(new_m->m);
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
 }
