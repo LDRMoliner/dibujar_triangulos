@@ -221,7 +221,6 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
             dibujar_linea_z(i, corte2.x, corte2.z, corte2.u, corte2.v, corte1.x, corte1.z, corte1.u, corte1.v);
     }
     // Dibujamos la mitad inferior del triángulo.
-    printf("lo hemos dejado en la altura: %f\n", i);
     for (i = perdiptr->y; i > pbeheptr->y; i--)
     {
         calcula_punto_corte(perdiptr, pbeheptr, i, &corte1);
@@ -258,9 +257,9 @@ void dibujar_triangulo(triobj *optr, int i)
     mxp(&p1, optr->mptr->m, tptr->p1);
     mxp(&p2, optr->mptr->m, tptr->p2);
     mxp(&p3, optr->mptr->m, tptr->p3);
-    printf("p1 actual: %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v);
-    printf("p2 actual: %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v);
-    printf("p3 actual: %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v);
+    // printf("p1 actual: %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v);
+    // printf("p2 actual: %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v);
+    // printf("p3 actual: %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v);
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
@@ -278,9 +277,9 @@ void dibujar_triangulo(triobj *optr, int i)
     pbeheptr = &p3;
 
     encontrar_max_min(&pgoiptr, &perdiptr, &pbeheptr);
-    printf("pgoi: %f, %f, %f, %f, %f\n", pgoiptr->x, pgoiptr->y, pgoiptr->z, pgoiptr->u, pgoiptr->v);
-    printf("perdi: %f, %f, %f, %f, %f\n", perdiptr->x, perdiptr->y, perdiptr->z, perdiptr->u, perdiptr->v);
-    printf("pbehe: %f, %f, %f, %f, %f\n", pbeheptr->x, pbeheptr->y, pbeheptr->z, pbeheptr->u, pbeheptr->v);
+    // printf("pgoi: %f, %f, %f, %f, %f\n", pgoiptr->x, pgoiptr->y, pgoiptr->z, pgoiptr->u, pgoiptr->v);
+    // printf("perdi: %f, %f, %f, %f, %f\n", perdiptr->x, perdiptr->y, perdiptr->z, perdiptr->u, perdiptr->v);
+    // printf("pbehe: %f, %f, %f, %f, %f\n", pbeheptr->x, pbeheptr->y, pbeheptr->z, pbeheptr->u, pbeheptr->v);
 
     // Llamada a función rellenar triángulo.
 
@@ -413,13 +412,10 @@ void transformacion_principal(double m[16])
 
     mxm(resultado, m, sel_ptr->mptr->m);
 
-    escribir_matriz(resultado);
-    // escribir_matriz(resultado);
     for (i = 0; i < 16; i++)
     {
         new_m->m[i] = resultado[i];
     }
-    escribir_matriz(new_m->m);
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
 }
@@ -441,6 +437,15 @@ void x_aldaketa(int dir)
     m[15] = 1;
 
     exponent = pow(-1, !dir);
+
+    if (aldaketa == 't')
+    {
+        m[10] = 1;
+        m[5] = 1;
+        m[3] = pow(-1, !dir);
+        transformacion_principal(m);
+        return;
+    }
     m[5] = cos(exponent * 0.075);
     m[6] = -sin(exponent * 0.075);
     m[9] = sin(exponent * 0.075);
@@ -462,6 +467,15 @@ void y_aldaketa(int dir)
     m[15] = 1;
 
     exponent = pow(-1, !dir);
+
+    if (aldaketa == 't')
+    {
+        m[10] = 1;
+        m[0] = 1;
+        m[7] = pow(-1, !dir);
+        transformacion_principal(m);
+        return;
+    }
     m[0] = cos(exponent * 0.075);
     m[2] = sin(exponent * 0.075);
     m[8] = -sin(exponent * 0.075);
@@ -485,12 +499,15 @@ void z_aldaketa(int dir)
 
     exponent = pow(-1, !dir);
 
+    if (aldaketa == 't')
+    {
+        return;
+    }
     m[0] = cos(exponent * 0.075);
     m[1] = -sin(exponent * 0.075);
     m[4] = sin(exponent * 0.075);
     m[5] = cos(exponent * 0.075);
     transformacion_principal(m);
-
 }
 
 void undo()
