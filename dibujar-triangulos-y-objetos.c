@@ -410,7 +410,14 @@ void transformacion_principal(double m[16])
     mlist *new_m = (mlist *)malloc(sizeof(mlist));
     int i = 0;
 
-    mxm(resultado, m, sel_ptr->mptr->m);
+    if (ald_lokala == 1)
+    {
+        mxm(resultado, sel_ptr->mptr->m, m);
+    }
+    else
+    {
+        mxm(resultado, m, sel_ptr->mptr->m);
+    }
 
     for (i = 0; i < 16; i++)
     {
@@ -442,10 +449,11 @@ void x_aldaketa(int dir)
     {
         m[10] = 1;
         m[5] = 1;
-        m[3] = pow(-1, !dir);
+        m[3] = pow(-1, !dir) * 5;
         transformacion_principal(m);
         return;
     }
+
     m[5] = cos(exponent * 0.075);
     m[6] = -sin(exponent * 0.075);
     m[9] = sin(exponent * 0.075);
@@ -472,14 +480,41 @@ void y_aldaketa(int dir)
     {
         m[10] = 1;
         m[0] = 1;
-        m[7] = pow(-1, !dir);
+        m[7] = pow(-1, !dir) * 5;
         transformacion_principal(m);
         return;
     }
+
     m[0] = cos(exponent * 0.075);
     m[2] = sin(exponent * 0.075);
     m[8] = -sin(exponent * 0.075);
     m[10] = cos(exponent * 0.075);
+    transformacion_principal(m);
+}
+void s_aldaketa(int dir)
+{
+    double m[16];
+    int exponent = 0;
+    int aldaketa = 0;
+    int i = 0;
+    for (i = 0; i < 16; i++)
+    {
+        m[i] = 0;
+    }
+
+    if (dir == 0)
+    {
+        m[0] = 0.950;
+        m[5] = 0.950;
+        m[10] = 0.950;
+        m[15] = 1;
+        transformacion_principal(m);
+        return;
+    }
+    m[0] = 1.05;
+    m[5] = 1.05;
+    m[10] = 1.05;
+    m[15] = 1;
     transformacion_principal(m);
 }
 
@@ -575,7 +610,10 @@ static void teklatua(unsigned char key, int x, int y)
             ald_lokala = 1;
         break;
     case 's':
-        aldaketa = 's';
+        s_aldaketa(0);
+        break;
+    case 'S':
+        s_aldaketa(1);
         break;
     case 'x':
         x_aldaketa(1);
