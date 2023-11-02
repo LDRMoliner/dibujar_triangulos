@@ -9,4 +9,5 @@ typedef struct hiruki
 punto p1,p2,p3;
 } hiruki;
 
+
 int cargar_triangulos(char *fitxiz, int *hkopptr, hiruki **hptrptr);
