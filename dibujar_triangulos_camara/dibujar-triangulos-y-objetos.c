@@ -22,12 +22,6 @@ typedef struct mlist
     struct mlist *hptr;
 } mlist;
 
-typedef struct camara
-{
-    double m[16];
-    struct camara *hptr;
-} camara;
-
 typedef struct triobj
 {
     hiruki *triptr;
@@ -35,15 +29,6 @@ typedef struct triobj
     mlist *mptr;
     struct triobj *hptr;
 } triobj;
-
-typedef struct tricam
-{
-    hiruki *triptr;
-    int num_triangulos;
-    camara *mptr;
-    struct tricam *hptr;
-} tricam;
-
 
 // testuraren informazioa
 // información de textura
@@ -55,9 +40,6 @@ int indexx;
 hiruki *triangulosptr;
 triobj *foptr;
 triobj *sel_ptr;
-tricam *cam_foptr;
-tricam *sel_cam_ptr;
-
 int denak;
 int lineak;
 int objektuak;
@@ -320,7 +302,7 @@ static void marraztu(void)
         return;
 
     // clear viewport...
-    if (objektuak == 1)
+    if (objektuak == 1) 
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     else
     {
@@ -330,7 +312,7 @@ static void marraztu(void)
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, 500.0, 0, 500.0, 0, 500.0);
+    glOrtho(-500.0, 500.0, -500.0, 500.0, -500.0, 500.0);
 
     triangulosptr = sel_ptr->triptr;
     if (objektuak == 1)
@@ -360,26 +342,6 @@ static void marraztu(void)
     glFlush();
 }
 
-void inicializar_camara()
-{
-    int i = 0;
-    camara *camara_ptr;
-    camara_ptr = (camara *)malloc(sizeof(camara));;
-
-    for (i = 0; i < 16; i++)
-    {
-        camara_ptr->m[i] = 0;
-    }
-    camara_ptr->m[0] = 1.0;
-    camara_ptr->m[5] = 1.0;
-    camara_ptr->m[10] = 1.0;
-    camara_ptr->m[15] = 1.0;
-
-    camara_ptr->hptr = cam_foptr;
-    cam_foptr = camara_ptr;
-    sel_cam_ptr = camara_ptr;
-}
-
 void read_from_file(char *fitx)
 {
     int i, retval;
@@ -397,7 +359,6 @@ void read_from_file(char *fitx)
     {
         triangulosptr = optr->triptr;
         // printf("objektuaren matrizea...\n");
-        inicializar_camara();
         optr->mptr = (mlist *)malloc(sizeof(mlist));
         for (i = 0; i < 16; i++)
             optr->mptr->m[i] = 0;
@@ -617,9 +578,6 @@ static void teklatua(unsigned char key, int x, int y)
                 }
             }
         }
-        break;
-    case 'c':
-
         break;
     case 'd':
         if (denak == 1)
