@@ -45,6 +45,8 @@ int lineak;
 int objektuak;
 char aldaketa;
 int ald_lokala;
+unsigned char *colorv;
+
 
 char fitxiz[100];
 
@@ -81,7 +83,6 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
     float u, v;
     float difu, difv, difz;
     unsigned char r, g, b;
-    unsigned char *colorv;
 
     glBegin(GL_POINTS);
 
@@ -349,9 +350,10 @@ void read_from_file(char *fitx)
 
     // printf("%s fitxategitik datuak hartzera\n",fitx);
     optr = (triobj *)malloc(sizeof(triobj));
-    retval = cargar_triangulos(fitx, &(optr->num_triangles), &(optr->triptr));
-    if (retval != 1)
+    retval = cargar_triangulos_color(fitx, &(optr->num_triangles), &(optr->triptr), &(colorv));
+    if (retval != 9 & retval != 15)
     {
+        printf("%d\n", retval);
         printf("%s fitxategitik datuak hartzerakoan arazoak izan ditut\n    Problemas al leer\n", fitxiz);
         free(optr);
     }
@@ -696,7 +698,7 @@ int main(int argc, char **argv)
     printf("Press <ESC> to finish\n");
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH);
-    glutInitWindowSize(500, 500);
+    glutInitWindowSize(1000, 1000);
     glutInitWindowPosition(100, 100);
     glutCreateWindow("Practica GCC");
     glutDisplayFunc(marraztu);
@@ -712,9 +714,9 @@ int main(int argc, char **argv)
     glClearColor(0.0f, 0.0f, 0.7f, 1.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
-    denak = 0;
-    lineak = 0;
-    objektuak = 0;
+    denak = 1;
+    lineak = 1;
+    objektuak = 1;
     foptr = 0;
     sel_ptr = 0;
     aldaketa = 'r';
@@ -722,7 +724,8 @@ int main(int argc, char **argv)
     if (argc > 1)
         read_from_file(argv[1]);
     else
-        read_from_file("adibideak.txt");
+        read_from_file("k.txt");
+        read_from_file("z.txt");
     glutMainLoop();
 
     return 0;
