@@ -302,7 +302,7 @@ static void marraztu(void)
         return;
 
     // clear viewport...
-    if (objektuak == 1) 
+    if (objektuak == 1)
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     else
     {
@@ -372,7 +372,7 @@ void read_from_file(char *fitx)
         foptr = optr;
         sel_ptr = optr;
     }
-    printf("datuak irakurrita\nLecura finalizada\n");
+    printf("datuak irakurrita\nLectura finalizada\n");
 }
 
 void mxm(double *resultado, double operando_izquierdo[16], double operando_derecho[16])
@@ -425,6 +425,7 @@ void transformacion_principal(double m[16])
     }
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
+    print_matrizea("");
 }
 void x_aldaketa(int dir)
 {
@@ -698,7 +699,6 @@ int main(int argc, char **argv)
     glutInitWindowSize(500, 500);
     glutInitWindowPosition(100, 100);
     glutCreateWindow("Practica GCC");
-
     glutDisplayFunc(marraztu);
     glutKeyboardFunc(teklatua);
     /* we put the information of the texture in the buffer pointed by bufferra. The dimensions of the texture are loaded into dimx and dimy */

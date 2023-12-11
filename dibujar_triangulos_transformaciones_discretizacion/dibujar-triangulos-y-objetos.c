@@ -425,6 +425,7 @@ void transformacion_principal(double m[16])
     }
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
+    print_matrizea("");
 }
 void x_aldaketa(int dir)
 {

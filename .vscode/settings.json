@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "glut.h": "c"
+        "glut.h": "c",
+        "cargar-triangulo.h": "c"
     }
 }
