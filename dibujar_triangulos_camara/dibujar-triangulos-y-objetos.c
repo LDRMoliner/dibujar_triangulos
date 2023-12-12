@@ -277,21 +277,32 @@ void dibujar_triangulo(triobj *optr, int i)
     // printf("p2: %f, %f, %f, %f, %f\n", tptr->p2.x, tptr->p2.y, tptr->p2.z, tptr->p2.u, tptr->p2.v);
     // printf("p3: %f, %f, %f, %f, %f\n", tptr->p3.x, tptr->p3.y, tptr->p3.z, tptr->p3.u, tptr->p3.v);
 
-    mxp(&p1, Mmodelview, tptr->p1);
-    mxp(&p2, Mmodelview, tptr->p2);
-    mxp(&p3, Mmodelview, tptr->p3);
+    mxp(&p1, my_cam.Mcsr, tptr->p1);
+    mxp(&p2, my_cam.Mcsr, tptr->p2);
+    mxp(&p3, my_cam.Mcsr, tptr->p3);
+
+    mxp(&p1, Mp, p1);
+    mxp(&p2, Mp, p2);
+    mxp(&p3, Mp, p3);
 
     if (persp){
-        p1.x = p1.x/p1.w * 500.0;
-        p1.y = p1.y/p1.w * 500.0;
+        //p1.x = p1.x/p1.w * 500.0;
+        p1.x = p1.x/p1.w;
+        // p1.y = p1.y/p1.w * 500.0;
+        p1.y = p1.y/p1.w;
         p1.z = -p1.z/p1.w;
         p1.w = 1.0;
-        p2.x = p2.x/p2.w * 500.0;
-        p2.y = p2.y/p2.w * 500.0;
+        // p2.x = p2.x/p2.w * 500.0;
+        p2.x = p2.x/p2.w;
+        // p2.y = p2.y/p2.w * 500.0;
+        p2.y = p2.y/p2.w;
+        // p2.z = -p2.z/p2.w * 500.0;
         p2.z = -p2.z/p2.w;
         p2.w = 1.0;
-        p3.x = p3.x/p3.w * 500.0;
-        p3.y = p3.y/p3.w * 500.0;
+        //p3.x = p3.x/p3.w * 500.0;
+        p3.x = p3.x/p3.w;
+        // p3.y = p3.y/p3.w * 500.0;
+        p3.y = p3.y/p3.w;
         p3.z = -p3.z/p3.w;
         p3.w = 1.0;
     }
@@ -362,13 +373,6 @@ static void marraztu(void)
         {
             for (auxptr = foptr; auxptr != 0; auxptr = auxptr->hptr)
             {
-                print_matrizea(" ", auxptr->mptr->m);
-                mxm(Mmodelview, my_cam.Mcsr, auxptr->mptr->m);
-                if (persp)
-                {
-                    mxm(aux, Mp, Mmodelview);
-                    memcpy(Mmodelview, aux, sizeof(aux));
-                }
                 for (i = 0; i < auxptr->num_triangles; i++)
                 {
                     dibujar_triangulo(auxptr, i);
@@ -390,7 +394,7 @@ static void marraztu(void)
     glFlush();
 }
 
-void read_from_file(char *fitx, int is_camera)
+void read_from_file(char *fitx)
 {
     int i, retval;
     triobj *optr;
@@ -761,7 +765,7 @@ void perspectiva()
     Mp[14] = -1;
 
     printf("Perspectiva:\n");
-    print_matrizea("perspektiba", Mp);
+    print_matrizea(" ", Mp);
 }
 
 void inicializar_camara()
@@ -784,7 +788,7 @@ void inicializar_camara()
     }   
 }
 
-void calcular_centroide(triobj *triangulosptr, double posicion_camara[3])
+void calcular_centroide(triobj *triangulosptr, double posicion_camara[2])
 {
     double x = 0, y = 0, z = 0;
     for (int i = 0; i < triangulosptr->num_triangles; i++)
@@ -808,7 +812,7 @@ void calcular_centroide(triobj *triangulosptr, double posicion_camara[3])
     posicion_camara[2] = z;
 }
 
-void normalizar(double p[3])
+void normalizar(double p[2])
 {
     float mod;
     mod = sqrt(pow(p[0], 2) + pow(p[1], 2) + pow(p[2], 2));
@@ -819,29 +823,29 @@ void normalizar(double p[3])
 
 int read_camera_from_file(char *fitx)
 {
-    int i, retval;
+    int i, j, retval;
     float mod;
     triobj *optr;
-    double posicion_camara[3];
-    double at[3];
-    double up[3];
-    double Zc[3];
-    punto Xc;
-    punto Yc;
+    double Mcb[16];
+    double posicion_camara[2];
+    double at[2];
+    double up[2];
+    double Zc[2];
+    double Xc[2];
+    double Yc[2];
 
 
     up[0] = 0;
     up[1] = 1;
     up[2] = 0;
 
-    at[0] = 0;
-    at[1] = 0;
-    at[2] = 1;
-    at[3] = 1;
+    posicion_camara[0] = 0;
+    posicion_camara[1] = 0;
+    posicion_camara[2] = 500;
 
     optr = (triobj *)malloc(sizeof(triobj));
     retval = cargar_triangulos_color(fitx, &(optr->num_triangles), &(optr->triptr), &(colorv));
-    if (retval!=9)
+    if (retval!=9 & retval!=15)
     {
         printf("No se encuentra el fichero de camara. ¡Muy mal!\n");
         free(optr);
@@ -861,23 +865,45 @@ int read_camera_from_file(char *fitx)
         
         // Calculamos el centroide del objeto
 
-        calcular_centroide(triangulosptr, posicion_camara);
+        calcular_centroide(optr, at);
 
         Zc[0] = posicion_camara[0] - at[0];
         Zc[1] = posicion_camara[1] - at[1];
         Zc[2] = posicion_camara[2] - at[2];
 
-        normalizar(&Zc);
+        normalizar(Zc);
 
-        Xc.x = up[1] * Zc.z - up.z * Zc.y;
-        Xc.y = -(up.z * Zc.x - up.x * Zc.z);
-        Xc.z = up.x * Zc.y - up.y * Zc.x;
+        Xc[0] = up[1] * Zc[2] - up[2] * Zc[1];
+        Xc[1] = -(up[2] * Zc[0] - up[0] * Zc[2]);
+        Xc[2] = up[0] * Zc[2] - up[2] * Zc[0];
 
-        normalizar(&Xc);
+        normalizar(Xc);
 
+        Yc[0] = Zc[1] * Xc[2] - Zc[2] * Xc[1];
+        Yc[1] = -(Zc[2] * Xc[0] - Zc[0] * Xc[2]);
+        Yc[2] = Zc[0] * Xc[1] - Zc[1] * Xc[0];
 
+        my_cam.Mco[3] = -posicion_camara[0];
+        my_cam.Mco[7] = -posicion_camara[1];
+        my_cam.Mco[11] = -posicion_camara[2];
 
-
+        Mcb[0] = Xc[0];
+        Mcb[1] = Xc[1];
+        Mcb[2] = Xc[2];
+        Mcb[3] = 0;
+        Mcb[4] = Yc[0];
+        Mcb[5] = Yc[1];
+        Mcb[6] = Yc[2];
+        Mcb[7] = 0;
+        Mcb[8] = Zc[0];
+        Mcb[9] = Zc[1];
+        Mcb[10] = Zc[2];
+        Mcb[11] = 0;
+        Mcb[12] = 0;
+        Mcb[13] = 0;
+        Mcb[14] = 1;
+        
+        mxm(my_cam.Mcsr, Mcb, my_cam.Mco);
     }
 }
 int main(int argc, char **argv)
@@ -915,9 +941,12 @@ int main(int argc, char **argv)
     ald_lokala = 1;
     perspectiva();
     inicializar_camara();
+    printf("Leyendo camara...\n");
+    read_camera_from_file("cam.txt");
+
     read_from_file("k.txt");
     sel_ptr->mptr->m[3] = -150;
-    read_camera_from_file("cam.txt");
+
     if (argc > 1){
         read_from_file(argv[1]);
     }
