@@ -30,6 +30,11 @@ typedef struct triobj
     struct triobj *hptr;
 } triobj;
 
+typedef struct camara
+{
+    double Mco[16];
+    double Mcsr[16];
+} camara;
 // testuraren informazioa
 // información de textura
 
@@ -40,22 +45,39 @@ int indexx;
 hiruki *triangulosptr;
 triobj *foptr;
 triobj *sel_ptr;
+triobj *fcptr;
+triobj *sel_cam;
+camara my_cam;
 int denak;
 int lineak;
+int cam;
+int persp;
 int objektuak;
 char aldaketa;
 int ald_lokala;
 unsigned char *colorv;
-
+double Mp[16]= {0.0};
+double Mmodelview[16] = {0.0};
 
 char fitxiz[100];
 
-void objektuari_aldaketa_sartu_ezk(double m[16])
+void mxm(double resultado[16], double operando_izquierdo[16], double operando_derecho[16])
 {
-}
-
-void objektuari_aldaketa_sartu_esk(double m[16])
-{
+    int i, j, k;
+    double res;
+    for (i = 0; i < 4; i++)
+    {
+        for (j = 0; j < 4; j++)
+        {
+            res = 0.0;
+            for (k = 0; k < 4; k++)
+            {
+                res += operando_izquierdo[i * 4 + k] * operando_derecho[k * 4 + j];
+            }
+            // printf("res: %f\n", res);
+            resultado[i * 4 + j] = res;
+        }
+    }
 }
 
 // TODO
@@ -122,14 +144,14 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
     glEnd();
 }
 
-void print_matrizea(char *str)
+void print_matrizea(char *str, double to_print[16])
 {
     int i;
 
     printf("%s\n", str);
     for (i = 0; i < 4; i++)
-        printf("%lf, %lf, %lf, %lf\n", sel_ptr->mptr->m[i * 4], sel_ptr->mptr->m[i * 4 + 1], sel_ptr->mptr->m[i * 4 + 2],
-               sel_ptr->mptr->m[i * 4 + 3]);
+        printf("%lf, %lf, %lf, %lf\n", to_print[i * 4], to_print[i * 4 + 1], to_print[i * 4 + 2],
+               to_print[i * 4 + 3]);
 }
 
 // TODO
@@ -255,9 +277,24 @@ void dibujar_triangulo(triobj *optr, int i)
     // printf("p2: %f, %f, %f, %f, %f\n", tptr->p2.x, tptr->p2.y, tptr->p2.z, tptr->p2.u, tptr->p2.v);
     // printf("p3: %f, %f, %f, %f, %f\n", tptr->p3.x, tptr->p3.y, tptr->p3.z, tptr->p3.u, tptr->p3.v);
 
-    mxp(&p1, optr->mptr->m, tptr->p1);
-    mxp(&p2, optr->mptr->m, tptr->p2);
-    mxp(&p3, optr->mptr->m, tptr->p3);
+    mxp(&p1, Mmodelview, tptr->p1);
+    mxp(&p2, Mmodelview, tptr->p2);
+    mxp(&p3, Mmodelview, tptr->p3);
+
+    if (persp){
+        p1.x = p1.x/p1.w * 500.0;
+        p1.y = p1.y/p1.w * 500.0;
+        p1.z = -p1.z/p1.w;
+        p1.w = 1.0;
+        p2.x = p2.x/p2.w * 500.0;
+        p2.y = p2.y/p2.w * 500.0;
+        p2.z = -p2.z/p2.w;
+        p2.w = 1.0;
+        p3.x = p3.x/p3.w * 500.0;
+        p3.y = p3.y/p3.w * 500.0;
+        p3.z = -p3.z/p3.w;
+        p3.w = 1.0;
+    }
     // printf("p1 actual: %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v);
     // printf("p2 actual: %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v);
     // printf("p3 actual: %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v);
@@ -292,6 +329,8 @@ static void marraztu(void)
     float u, v;
     int i, j;
     triobj *auxptr;
+    double aux[16];
+
     /*
     unsigned char* colorv;
     unsigned char r,g,b;
@@ -313,15 +352,23 @@ static void marraztu(void)
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(-500.0, 500.0, -500.0, 500.0, -500.0, 500.0);
+    glOrtho(-500.0, 500.0, -500.0, 500.0, 0.0, 500.0);
 
     triangulosptr = sel_ptr->triptr;
     if (objektuak == 1)
     {
+        
         if (denak == 1)
         {
             for (auxptr = foptr; auxptr != 0; auxptr = auxptr->hptr)
             {
+                print_matrizea(" ", auxptr->mptr->m);
+                mxm(Mmodelview, my_cam.Mcsr, auxptr->mptr->m);
+                if (persp)
+                {
+                    mxm(aux, Mp, Mmodelview);
+                    memcpy(Mmodelview, aux, sizeof(aux));
+                }
                 for (i = 0; i < auxptr->num_triangles; i++)
                 {
                     dibujar_triangulo(auxptr, i);
@@ -343,7 +390,7 @@ static void marraztu(void)
     glFlush();
 }
 
-void read_from_file(char *fitx)
+void read_from_file(char *fitx, int is_camera)
 {
     int i, retval;
     triobj *optr;
@@ -377,24 +424,7 @@ void read_from_file(char *fitx)
     printf("datuak irakurrita\nLectura finalizada\n");
 }
 
-void mxm(double *resultado, double operando_izquierdo[16], double operando_derecho[16])
-{
-    int i, j, k;
-    double res;
-    for (i = 0; i < 4; i++)
-    {
-        for (j = 0; j < 4; j++)
-        {
-            res = 0.0;
-            for (k = 0; k < 4; k++)
-            {
-                res += operando_izquierdo[i * 4 + k] * operando_derecho[k * 4 + j];
-            }
-            // printf("res: %f\n", res);
-            resultado[i * 4 + j] = res;
-        }
-    }
-}
+
 void escribir_matriz(double m[16])
 {
     int i;
@@ -427,7 +457,7 @@ void transformacion_principal(double m[16])
     }
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
-    print_matrizea("");
+    print_matrizea("", sel_ptr->mptr->m);
 }
 void x_aldaketa(int dir)
 {
@@ -639,6 +669,26 @@ static void teklatua(unsigned char key, int x, int y)
     case 'u':
         undo();
         break;
+    case 'p':
+        if (persp == 1)
+        {
+            persp == 0;
+        }
+        else
+        {
+            persp = 1;
+        }
+        break;
+    case 'P':
+        if (persp == 0)
+        {
+            persp == 1;
+        }
+        else
+        {
+            persp = 0;
+        }
+        break;
     case 'f':
         /*Ask for file*/
         printf("idatzi fitxategi izena\n");
@@ -690,6 +740,146 @@ static void teklatua(unsigned char key, int x, int y)
     glutPostRedisplay();
 }
 
+void perspectiva()
+{
+
+    double l,r,b,t,n,f; 
+
+    l= -1.0;
+    r=  1.0;
+    b= -1.0;
+    t=  1.0;
+    n=  1.0;
+    f=  500.0;
+
+    Mp[0] = (2*n)/(r-l);
+    Mp[2]= (r+l)/(r-l);
+    Mp[5]= (2*n)/(t-b);
+    Mp[6]= (t+b)/(t-b);
+    Mp[10]= -(f+n)/(f-n);
+    Mp[11]= -(2*f*n)/(f-n);
+    Mp[14] = -1;
+
+    printf("Perspectiva:\n");
+    print_matrizea("perspektiba", Mp);
+}
+
+void inicializar_camara()
+{
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            if (i == j)
+            {
+                my_cam.Mco[i * 4 + j] = 1;
+                my_cam.Mcsr[i * 4 + j] = 1;
+            }
+            else
+            {
+                my_cam.Mco[i * 4 + j] = 0;
+                my_cam.Mcsr[i * 4 + j] = 0;
+            }
+        }
+    }   
+}
+
+void calcular_centroide(triobj *triangulosptr, double posicion_camara[3])
+{
+    double x = 0, y = 0, z = 0;
+    for (int i = 0; i < triangulosptr->num_triangles; i++)
+    {
+        x += triangulosptr->triptr[i].p1.x;
+        y += triangulosptr->triptr[i].p1.y;
+        z += triangulosptr->triptr[i].p1.z;
+        x += triangulosptr->triptr[i].p2.x;
+        y += triangulosptr->triptr[i].p2.y;
+        z += triangulosptr->triptr[i].p2.z;
+        x += triangulosptr->triptr[i].p3.x;
+        y += triangulosptr->triptr[i].p3.y;
+        z += triangulosptr->triptr[i].p3.z;
+    }
+    x = x / (triangulosptr->num_triangles * 3);
+    y = y / (triangulosptr->num_triangles * 3);
+    z = z / (triangulosptr->num_triangles * 3);
+
+    posicion_camara[0] = x;
+    posicion_camara[1] = y;
+    posicion_camara[2] = z;
+}
+
+void normalizar(double p[3])
+{
+    float mod;
+    mod = sqrt(pow(p[0], 2) + pow(p[1], 2) + pow(p[2], 2));
+    p[0] = p[0] / mod;
+    p[1] = p[1] / mod;
+    p[2] = p[2] / mod;
+}
+
+int read_camera_from_file(char *fitx)
+{
+    int i, retval;
+    float mod;
+    triobj *optr;
+    double posicion_camara[3];
+    double at[3];
+    double up[3];
+    double Zc[3];
+    punto Xc;
+    punto Yc;
+
+
+    up[0] = 0;
+    up[1] = 1;
+    up[2] = 0;
+
+    at[0] = 0;
+    at[1] = 0;
+    at[2] = 1;
+    at[3] = 1;
+
+    optr = (triobj *)malloc(sizeof(triobj));
+    retval = cargar_triangulos_color(fitx, &(optr->num_triangles), &(optr->triptr), &(colorv));
+    if (retval!=9)
+    {
+        printf("No se encuentra el fichero de camara. ¡Muy mal!\n");
+        free(optr);
+        exit(1);
+    }
+    else
+    {
+        triangulosptr = optr->triptr;
+        optr->mptr = (mlist *)malloc(sizeof(mlist));
+        for (i = 0; i < 16; i++)
+            optr->mptr->m[i] = 0;
+        optr->mptr->m[0] = 1.0;
+        optr->mptr->m[5] = 1.0;
+        optr->mptr->m[10] = 1.0;
+        optr->mptr->m[15] = 1.0;
+        optr->mptr->hptr = 0;
+        
+        // Calculamos el centroide del objeto
+
+        calcular_centroide(triangulosptr, posicion_camara);
+
+        Zc[0] = posicion_camara[0] - at[0];
+        Zc[1] = posicion_camara[1] - at[1];
+        Zc[2] = posicion_camara[2] - at[2];
+
+        normalizar(&Zc);
+
+        Xc.x = up[1] * Zc.z - up.z * Zc.y;
+        Xc.y = -(up.z * Zc.x - up.x * Zc.z);
+        Xc.z = up.x * Zc.y - up.y * Zc.x;
+
+        normalizar(&Xc);
+
+
+
+
+    }
+}
 int main(int argc, char **argv)
 {
     int retval;
@@ -716,16 +906,25 @@ int main(int argc, char **argv)
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
     denak = 1;
     lineak = 1;
+    persp = 1;
     objektuak = 1;
+    cam = 0;
     foptr = 0;
     sel_ptr = 0;
     aldaketa = 'r';
     ald_lokala = 1;
-    if (argc > 1)
+    perspectiva();
+    inicializar_camara();
+    read_from_file("k.txt");
+    sel_ptr->mptr->m[3] = -150;
+    read_camera_from_file("cam.txt");
+    if (argc > 1){
         read_from_file(argv[1]);
-    else
-        read_from_file("k.txt");
+    }
+    else{
         read_from_file("z.txt");
+    }
+    sel_ptr->mptr->m[3] = 150;
     glutMainLoop();
 
     return 0;

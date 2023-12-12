@@ -1,7 +1,7 @@
 
 typedef struct punto
 {
-float x, y, z, u,v;
+float x, y, z, w, u,v;
 } punto;
 
 typedef struct hiruki
