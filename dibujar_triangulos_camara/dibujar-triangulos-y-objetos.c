@@ -277,13 +277,15 @@ void dibujar_triangulo(triobj *optr, int i)
     // printf("p2: %f, %f, %f, %f, %f\n", tptr->p2.x, tptr->p2.y, tptr->p2.z, tptr->p2.u, tptr->p2.v);
     // printf("p3: %f, %f, %f, %f, %f\n", tptr->p3.x, tptr->p3.y, tptr->p3.z, tptr->p3.u, tptr->p3.v);
 
-    mxp(&p1, my_cam.Mcsr, tptr->p1);
-    mxp(&p2, my_cam.Mcsr, tptr->p2);
-    mxp(&p3, my_cam.Mcsr, tptr->p3);
+    mxm(Mmodelview, my_cam.Mcsr, optr->mptr->m);
+    print_matrizea("Mmodelview", Mmodelview);
+    mxp(&p1, Mmodelview, tptr->p1);
+    mxp(&p2, Mmodelview, tptr->p2);
+    mxp(&p3, Mmodelview, tptr->p3);
 
-    mxp(&p1, Mp, p1);
-    mxp(&p2, Mp, p2);
-    mxp(&p3, Mp, p3);
+    //mxp(&p1, Mp, p1);
+    //mxp(&p2, Mp, p2);
+    //mxp(&p3, Mp, p3);
 
     if (persp){
         //p1.x = p1.x/p1.w * 500.0;
@@ -426,18 +428,6 @@ void read_from_file(char *fitx)
         sel_ptr = optr;
     }
     printf("datuak irakurrita\nLectura finalizada\n");
-}
-
-
-void escribir_matriz(double m[16])
-{
-    int i;
-    for (i = 0; i < 16; i++)
-    {
-        printf("%f ", m[i]);
-        if (i % 4 == 3)
-            printf("\n");
-    }
 }
 
 void transformacion_principal(double m[16])
@@ -754,7 +744,7 @@ void perspectiva()
     b= -1.0;
     t=  1.0;
     n=  1.0;
-    f=  500.0;
+    f=  200.0;
 
     Mp[0] = (2*n)/(r-l);
     Mp[2]= (r+l)/(r-l);
@@ -770,22 +760,22 @@ void perspectiva()
 
 void inicializar_camara()
 {
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 3; i++)
     {
-        for (int j = 0; j < 4; j++)
+        for (int j = 0; j < 3; j++)
         {
             if (i == j)
             {
-                my_cam.Mco[i * 4 + j] = 1;
                 my_cam.Mcsr[i * 4 + j] = 1;
             }
             else
             {
-                my_cam.Mco[i * 4 + j] = 0;
                 my_cam.Mcsr[i * 4 + j] = 0;
             }
         }
-    }   
+    }
+    my_cam.Mcsr[11] = 200;
+    print_matrizea("", my_cam.Mcsr);
 }
 
 void calcular_centroide(triobj *triangulosptr, double posicion_camara[2])
@@ -942,19 +932,16 @@ int main(int argc, char **argv)
     perspectiva();
     inicializar_camara();
     printf("Leyendo camara...\n");
-    read_camera_from_file("cam.txt");
-
+    // read_camera_from_file("cam.txt");
     read_from_file("k.txt");
-    sel_ptr->mptr->m[3] = -150;
-
+    sel_ptr->mptr->m[3]= -200;
     if (argc > 1){
         read_from_file(argv[1]);
     }
     else{
         read_from_file("z.txt");
     }
-    sel_ptr->mptr->m[3] = 150;
+    sel_ptr->mptr->m[3]= 200;
     glutMainLoop();
-
     return 0;
 }
