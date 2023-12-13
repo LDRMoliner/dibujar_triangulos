@@ -32,7 +32,7 @@ typedef struct triobj
 
 typedef struct camara
 {
-    double Mco[16];
+    double Mcam[16];
     double Mcsr[16];
 } camara;
 // testuraren informazioa
@@ -262,6 +262,7 @@ void dibujar_triangulo(triobj *optr, int i)
     punto *pgoiptr2, *pbeheptr2, *perdiptr2;
     punto corte1, corte2;
     int start1, star2;
+    double aux[16];
     float t = 1, s = 1, q = 1;
     float decremento_t = 1, decremento_s = 1, decremento_q = 1;
     float c1x, c1z, c1u, c1v, c2x, c2z, c2u, c2v;
@@ -278,39 +279,40 @@ void dibujar_triangulo(triobj *optr, int i)
     // printf("p3: %f, %f, %f, %f, %f\n", tptr->p3.x, tptr->p3.y, tptr->p3.z, tptr->p3.u, tptr->p3.v);
 
     mxm(Mmodelview, my_cam.Mcsr, optr->mptr->m);
+   
     print_matrizea("Mmodelview", Mmodelview);
     mxp(&p1, Mmodelview, tptr->p1);
     mxp(&p2, Mmodelview, tptr->p2);
     mxp(&p3, Mmodelview, tptr->p3);
 
-    //mxp(&p1, Mp, p1);
-    //mxp(&p2, Mp, p2);
-    //mxp(&p3, Mp, p3);
+    // mxp(&p1, Mp, p1);
+    // mxp(&p2, Mp, p2);
+    // mxp(&p3, Mp, p3);
 
     if (persp){
-        //p1.x = p1.x/p1.w * 500.0;
-        p1.x = p1.x/p1.w;
-        // p1.y = p1.y/p1.w * 500.0;
-        p1.y = p1.y/p1.w;
+        p1.x = p1.x/p1.w * 500.0;
+        // p1.x = p1.x/p1.w;
+        p1.y = p1.y/p1.w * 500.0;
+        // p1.y = p1.y/p1.w;
         p1.z = -p1.z/p1.w;
         p1.w = 1.0;
-        // p2.x = p2.x/p2.w * 500.0;
-        p2.x = p2.x/p2.w;
-        // p2.y = p2.y/p2.w * 500.0;
-        p2.y = p2.y/p2.w;
-        // p2.z = -p2.z/p2.w * 500.0;
-        p2.z = -p2.z/p2.w;
+        p2.x = p2.x/p2.w * 500.0;
+        // p2.x = p2.x/p2.w;
+        p2.y = p2.y/p2.w * 500.0;
+        // p2.y = p2.y/p2.w;
+        p2.z = -p2.z/p2.w * 500.0;
+        // p2.z = -p2.z/p2.w;
         p2.w = 1.0;
-        //p3.x = p3.x/p3.w * 500.0;
-        p3.x = p3.x/p3.w;
-        // p3.y = p3.y/p3.w * 500.0;
-        p3.y = p3.y/p3.w;
+        p3.x = p3.x/p3.w * 500.0;
+        // p3.x = p3.x/p3.w;
+        p3.y = p3.y/p3.w * 500.0;
+        // p3.y = p3.y/p3.w;
         p3.z = -p3.z/p3.w;
         p3.w = 1.0;
     }
-    // printf("p1 actual: %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v);
-    // printf("p2 actual: %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v);
-    // printf("p3 actual: %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v);
+    printf("p1 actual: %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v);
+    printf("p2 actual: %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v);
+    printf("p3 actual: %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v);
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
@@ -743,8 +745,8 @@ void perspectiva()
     r=  1.0;
     b= -1.0;
     t=  1.0;
-    n=  1.0;
-    f=  200.0;
+    n=  10.0;
+    f=  500.0;
 
     Mp[0] = (2*n)/(r-l);
     Mp[2]= (r+l)/(r-l);
@@ -760,6 +762,7 @@ void perspectiva()
 
 void inicializar_camara()
 {
+    double pos[3] = {0, 0, 200};
     for (int i = 0; i < 3; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -767,15 +770,21 @@ void inicializar_camara()
             if (i == j)
             {
                 my_cam.Mcsr[i * 4 + j] = 1;
+                my_cam.Mcam[i * 4 + j] = 1;
             }
             else
             {
-                my_cam.Mcsr[i * 4 + j] = 0;
+                my_cam.Mcam[i * 4 + j] = 0;
             }
         }
     }
-    my_cam.Mcsr[11] = 200;
-    print_matrizea("", my_cam.Mcsr);
+    my_cam.Mcsr[15] = 1;
+    my_cam.Mcsr[3] = -200;
+    my_cam.Mcsr[7] = -200;
+    my_cam.Mcsr[11] = -200;
+    
+
+
 }
 
 void calcular_centroide(triobj *triangulosptr, double posicion_camara[2])
@@ -811,91 +820,91 @@ void normalizar(double p[2])
     p[2] = p[2] / mod;
 }
 
-int read_camera_from_file(char *fitx)
-{
-    int i, j, retval;
-    float mod;
-    triobj *optr;
-    double Mcb[16];
-    double posicion_camara[2];
-    double at[2];
-    double up[2];
-    double Zc[2];
-    double Xc[2];
-    double Yc[2];
+// int read_camera_from_file(char *fitx)
+// {
+//     int i, j, retval;
+//     float mod;
+//     triobj *optr;
+//     double Mcb[16];
+//     double posicion_camara[2];
+//     double at[2];
+//     double up[2];
+//     double Zc[2];
+//     double Xc[2];
+//     double Yc[2];
 
 
-    up[0] = 0;
-    up[1] = 1;
-    up[2] = 0;
+//     up[0] = 0;
+//     up[1] = 1;
+//     up[2] = 0;
 
-    posicion_camara[0] = 0;
-    posicion_camara[1] = 0;
-    posicion_camara[2] = 500;
+//     posicion_camara[0] = 0;
+//     posicion_camara[1] = 0;
+//     posicion_camara[2] = 500;
 
-    optr = (triobj *)malloc(sizeof(triobj));
-    retval = cargar_triangulos_color(fitx, &(optr->num_triangles), &(optr->triptr), &(colorv));
-    if (retval!=9 & retval!=15)
-    {
-        printf("No se encuentra el fichero de camara. ¡Muy mal!\n");
-        free(optr);
-        exit(1);
-    }
-    else
-    {
-        triangulosptr = optr->triptr;
-        optr->mptr = (mlist *)malloc(sizeof(mlist));
-        for (i = 0; i < 16; i++)
-            optr->mptr->m[i] = 0;
-        optr->mptr->m[0] = 1.0;
-        optr->mptr->m[5] = 1.0;
-        optr->mptr->m[10] = 1.0;
-        optr->mptr->m[15] = 1.0;
-        optr->mptr->hptr = 0;
+//     optr = (triobj *)malloc(sizeof(triobj));
+//     retval = cargar_triangulos_color(fitx, &(optr->num_triangles), &(optr->triptr), &(colorv));
+//     if (retval!=9 & retval!=15)
+//     {
+//         printf("No se encuentra el fichero de camara. ¡Muy mal!\n");
+//         free(optr);
+//         exit(1);
+//     }
+//     else
+//     {
+//         triangulosptr = optr->triptr;
+//         optr->mptr = (mlist *)malloc(sizeof(mlist));
+//         for (i = 0; i < 16; i++)
+//             optr->mptr->m[i] = 0;
+//         optr->mptr->m[0] = 1.0;
+//         optr->mptr->m[5] = 1.0;
+//         optr->mptr->m[10] = 1.0;
+//         optr->mptr->m[15] = 1.0;
+//         optr->mptr->hptr = 0;
         
-        // Calculamos el centroide del objeto
+//         // Calculamos el centroide del objeto
 
-        calcular_centroide(optr, at);
+//         calcular_centroide(optr, at);
 
-        Zc[0] = posicion_camara[0] - at[0];
-        Zc[1] = posicion_camara[1] - at[1];
-        Zc[2] = posicion_camara[2] - at[2];
+//         Zc[0] = posicion_camara[0] - at[0];
+//         Zc[1] = posicion_camara[1] - at[1];
+//         Zc[2] = posicion_camara[2] - at[2];
 
-        normalizar(Zc);
+//         normalizar(Zc);
 
-        Xc[0] = up[1] * Zc[2] - up[2] * Zc[1];
-        Xc[1] = -(up[2] * Zc[0] - up[0] * Zc[2]);
-        Xc[2] = up[0] * Zc[2] - up[2] * Zc[0];
+//         Xc[0] = up[1] * Zc[2] - up[2] * Zc[1];
+//         Xc[1] = -(up[2] * Zc[0] - up[0] * Zc[2]);
+//         Xc[2] = up[0] * Zc[2] - up[2] * Zc[0];
 
-        normalizar(Xc);
+//         normalizar(Xc);
 
-        Yc[0] = Zc[1] * Xc[2] - Zc[2] * Xc[1];
-        Yc[1] = -(Zc[2] * Xc[0] - Zc[0] * Xc[2]);
-        Yc[2] = Zc[0] * Xc[1] - Zc[1] * Xc[0];
+//         Yc[0] = Zc[1] * Xc[2] - Zc[2] * Xc[1];
+//         Yc[1] = -(Zc[2] * Xc[0] - Zc[0] * Xc[2]);
+//         Yc[2] = Zc[0] * Xc[1] - Zc[1] * Xc[0];
 
-        my_cam.Mco[3] = -posicion_camara[0];
-        my_cam.Mco[7] = -posicion_camara[1];
-        my_cam.Mco[11] = -posicion_camara[2];
+//         my_cam.Mco[3] = -posicion_camara[0];
+//         my_cam.Mco[7] = -posicion_camara[1];
+//         my_cam.Mco[11] = -posicion_camara[2];
 
-        Mcb[0] = Xc[0];
-        Mcb[1] = Xc[1];
-        Mcb[2] = Xc[2];
-        Mcb[3] = 0;
-        Mcb[4] = Yc[0];
-        Mcb[5] = Yc[1];
-        Mcb[6] = Yc[2];
-        Mcb[7] = 0;
-        Mcb[8] = Zc[0];
-        Mcb[9] = Zc[1];
-        Mcb[10] = Zc[2];
-        Mcb[11] = 0;
-        Mcb[12] = 0;
-        Mcb[13] = 0;
-        Mcb[14] = 1;
+//         Mcb[0] = Xc[0];
+//         Mcb[1] = Xc[1];
+//         Mcb[2] = Xc[2];
+//         Mcb[3] = 0;
+//         Mcb[4] = Yc[0];
+//         Mcb[5] = Yc[1];
+//         Mcb[6] = Yc[2];
+//         Mcb[7] = 0;
+//         Mcb[8] = Zc[0];
+//         Mcb[9] = Zc[1];
+//         Mcb[10] = Zc[2];
+//         Mcb[11] = 0;
+//         Mcb[12] = 0;
+//         Mcb[13] = 0;
+//         Mcb[14] = 1;
         
-        mxm(my_cam.Mcsr, Mcb, my_cam.Mco);
-    }
-}
+//         mxm(my_cam.Mcsr, Mcb, my_cam.Mco);
+//     }
+// }
 int main(int argc, char **argv)
 {
     int retval;
@@ -922,7 +931,7 @@ int main(int argc, char **argv)
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
     denak = 1;
     lineak = 1;
-    persp = 1;
+    persp = 0;
     objektuak = 1;
     cam = 0;
     foptr = 0;
@@ -934,14 +943,13 @@ int main(int argc, char **argv)
     printf("Leyendo camara...\n");
     // read_camera_from_file("cam.txt");
     read_from_file("k.txt");
-    sel_ptr->mptr->m[3]= -200;
     if (argc > 1){
         read_from_file(argv[1]);
     }
     else{
         read_from_file("z.txt");
     }
-    sel_ptr->mptr->m[3]= 200;
+    sel_ptr->mptr->m[3]= 400;
     glutMainLoop();
     return 0;
 }
