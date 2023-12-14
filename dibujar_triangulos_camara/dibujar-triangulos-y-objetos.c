@@ -30,12 +30,12 @@ typedef struct triobj
     struct triobj *hptr;
 } triobj;
 
-typedef struct camara
+typedef struct my_camera
 {
-    double M[16];
+    struct triobj *coptr;
     double Mcsr[16];
-} camara;
-
+    struct my_camera *hptr;
+} my_camera;
 
 // testuraren informazioa
 // información de textura
@@ -45,13 +45,12 @@ unsigned char *bufferra;
 int dimx, dimy;
 int indexx;
 // Direcciones de los objetos que NO son cáramas.
-hiruki *triangulosptr;
 triobj *foptr;
 triobj *sel_ptr;
 
 // Direcciones de los objetos que SÍ son cámaras.
-
-hiruki *camarasptr;
+my_camera *focptr;
+my_camera *sel_cptr;
 
 // Aquí se guardan los valores para las decisiones que se toman.
 int denak;
@@ -286,10 +285,10 @@ void dibujar_triangulo(triobj *optr, int i)
 
     // mxm(Mmodelview, my_cam.Mcsr, optr->mptr->m);
 
-    print_matrizea("Mmodelview", Mmodelview);
-    mxp(&p1, sel_ptr->mptr->m, tptr->p1);
-    mxp(&p2, sel_ptr->mptr->m, tptr->p2);
-    mxp(&p3, sel_ptr->mptr->m, tptr->p3);
+    // print_matrizea("Mmodelview", Mmodelview);
+    mxp(&p1, optr->mptr->m, tptr->p1);
+    mxp(&p2, optr->mptr->m, tptr->p2);
+    mxp(&p3, optr->mptr->m, tptr->p3);
 
     if (persp)
     {
@@ -348,9 +347,9 @@ void dibujar_triangulo(triobj *optr, int i)
 
 static void marraztu(void)
 {
-    float u, v;
     int i, j;
     triobj *auxptr;
+    triobj *cauxptr;
     double aux[16];
 
     /*
@@ -362,16 +361,21 @@ static void marraztu(void)
     // no se puede dibujar sin objetos
     if (foptr == 0)
         return;
-
     // clear viewport...
     if (objektuak == 1)
+    {
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+        GLenum error = glGetError();
+        if (error != GL_NO_ERROR)
+        {
+            fprintf(stderr, "OpenGL error after glClear: %s\n", gluErrorString(error));
+        }
+    }
     else
     {
         if (denak == 0)
             glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     }
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(-500.0, 500.0, -500.0, 500.0, 0.0, 500.0);
@@ -381,10 +385,20 @@ static void marraztu(void)
 
         if (denak == 1)
         {
+
             for (auxptr = foptr; auxptr != 0; auxptr = auxptr->hptr)
             {
                 for (i = 0; i < auxptr->num_triangles; i++)
                 {
+                    dibujar_triangulo(auxptr, i);
+                }
+            }
+            printf("%d", focptr->coptr == 0);
+            for (auxptr = focptr->coptr; auxptr != 0; auxptr = auxptr->hptr)
+            {
+                for (i = 0; i < auxptr->num_triangles; i++)
+                {
+                    printf("A dibujar\n");
                     dibujar_triangulo(auxptr, i);
                 }
             }
@@ -395,22 +409,30 @@ static void marraztu(void)
             {
                 dibujar_triangulo(sel_ptr, i);
             }
+            printf("Agur\n");
+            for (i = 0; i < sel_cptr->coptr->num_triangles; i++)
+            {
+                dibujar_triangulo(sel_cptr->coptr, i);
+            }
         }
     }
     else
     {
         dibujar_triangulo(sel_ptr, indexx);
+        dibujar_triangulo(sel_cptr->coptr, indexx);
     }
     glFlush();
 }
 
-void read_from_file(char *fitx)
+void read_from_file(char *fitx, int is_camera)
 {
     int i, retval;
     triobj *optr;
+    my_camera *cam_ptr;
 
     // printf("%s fitxategitik datuak hartzera\n",fitx);
     optr = (triobj *)malloc(sizeof(triobj));
+    cam_ptr = (my_camera *)malloc(sizeof(my_camera));
     retval = cargar_triangulos_color(fitx, &(optr->num_triangles), &(optr->triptr), &(colorv));
     if (retval != 9 & retval != 15)
     {
@@ -420,8 +442,10 @@ void read_from_file(char *fitx)
     }
     else
     {
+
         // printf("objektuaren matrizea...\n");
         optr->mptr = (mlist *)malloc(sizeof(mlist));
+
         for (i = 0; i < 16; i++)
             optr->mptr->m[i] = 0;
         optr->mptr->m[0] = 1.0;
@@ -429,10 +453,29 @@ void read_from_file(char *fitx)
         optr->mptr->m[10] = 1.0;
         optr->mptr->m[15] = 1.0;
         optr->mptr->hptr = 0;
+
         // printf("objektu zerrendara doa informazioa...\n");
-        optr->hptr = foptr;
-        foptr = optr;
-        sel_ptr = optr;
+        if (is_camera)
+        {
+            printf("Sobrevivo borja\n");
+            cam_ptr->coptr = optr;
+            cam_ptr->hptr = focptr;
+            focptr = cam_ptr;
+            sel_cptr = cam_ptr;
+            for (i = 0; i < 16; i++)
+                sel_cptr->Mcsr[i] = 0.0;
+            sel_cptr->Mcsr[0] = 1.0;
+            sel_cptr->Mcsr[5] = 1.0;
+            sel_cptr->Mcsr[10] = 1.0;
+            sel_cptr->Mcsr[15] = 200.0;
+            print_matrizea("Mcsr", focptr->Mcsr);
+        }
+        else
+        {
+            optr->hptr = foptr;
+            foptr = optr;
+            sel_ptr = optr;
+        }
     }
     printf("datuak irakurrita\nLectura finalizada\n");
 }
@@ -576,6 +619,8 @@ void z_aldaketa(int dir)
     m[1] = -sin(exponent * 0.075);
     m[4] = sin(exponent * 0.075);
     m[5] = cos(exponent * 0.075);
+    m[10] = 1;
+    print_matrizea("Aldaketa", m);
     transformacion_principal(m);
 }
 
@@ -673,7 +718,7 @@ static void teklatua(unsigned char key, int x, int y)
     case 'p':
         if (persp == 1)
         {
-            persp == 0;
+            persp = 0;
         }
         else
         {
@@ -683,7 +728,7 @@ static void teklatua(unsigned char key, int x, int y)
     case 'P':
         if (persp == 0)
         {
-            persp == 1;
+            persp = 1;
         }
         else
         {
@@ -694,7 +739,7 @@ static void teklatua(unsigned char key, int x, int y)
         /*Ask for file*/
         printf("idatzi fitxategi izena\n");
         scanf("%s", &(fitxiz[0]));
-        read_from_file(fitxiz);
+        read_from_file(fitxiz, 0);
         indexx = 0;
         break;
         /* case 'S':  // save to file
@@ -765,28 +810,6 @@ void perspectiva()
     print_matrizea(" ", Mp);
 }
 
-// void inicializar_camara()
-// {
-//     int i = 0;
-//     int j = 0;
-//     for (i = 0; i < 4; i++)
-//     {
-//         for (j = 0; j < 4; j++)
-//         {
-//             if (i == j)
-//             {
-//                 my_cam.Mcsr[i * 4 + j] = 1;
-//                 my_cam.M[i * 4 + j] = 1;
-//             }
-//             else
-//             {
-//                 my_cam.M[i * 4 + j] = 0;
-//             }
-//         }
-//     }
-// }
-
-
 int main(int argc, char **argv)
 {
     int retval;
@@ -823,17 +846,18 @@ int main(int argc, char **argv)
     perspectiva();
     // inicializar_camara();
     printf("Leyendo camara...\n");
-    // read_camera_from_file("cam.txt");
-    read_from_file("k.txt");
+    read_from_file("cam.txt", 1);
+    read_from_file("k.txt", 0);
     sel_ptr->mptr->m[3] = -200;
     if (argc > 1)
     {
-        read_from_file(argv[1]);
+        read_from_file(argv[1], 0);
     }
     else
     {
-        read_from_file("z.txt");
+        read_from_file("z.txt", 0);
     }
+
     sel_ptr->mptr->m[3] = 200;
     glutMainLoop();
     return 0;
