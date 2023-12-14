@@ -160,7 +160,7 @@ void print_matrizea(char *str, double to_print[16])
 }
 void normalizar(double vector[3])
 {
-    double length;
+    double length = 0.0;
     int i;
     for (i = 0; i < 3; i++)
     {
@@ -176,13 +176,13 @@ void normalizar(double vector[3])
 void calcular_mcsr(my_camera *cam)
 {
     int i, j;
-    double X_cam[3];
-    double Y_cam[3];
-    double Z_cam[3];
-    double Pos_cam[3];
-    double Mcb[16] = {0,0};
-    double Mco[16] = {0,0};
-    double at[3] = {0.0, 0.0, 0.0};
+    double X_cam[3] = {0.0};
+    double Y_cam[3] = {0.0};
+    double Z_cam[3] = {0.0};
+    double Pos_cam[3] = {0.0};
+    double Mcb[16] = {0.0};
+    double Mco[16] = {0.0};
+    double at[3] = {0.0};
     double up[3] = {0.0, 1.0, 0.0};
 
     Pos_cam[0] = cam->coptr->mptr->m[3];
@@ -192,17 +192,16 @@ void calcular_mcsr(my_camera *cam)
     Z_cam[0] = Pos_cam[0] - at[0];
     Z_cam[1] = Pos_cam[1] - at[1];
     Z_cam[2] = Pos_cam[2] - at[2];
-
     normalizar(Z_cam);
 
     X_cam[0] = up[1] * Z_cam[2] - up[2] * Z_cam[1];
-    X_cam[1] = -(up[2] * Z_cam[0] - up[0] * Z_cam[2]);
-    X_cam[2] = up[0] * Z_cam[2] - up[2] * Z_cam[0];
+    X_cam[1] = -(up[0] * Z_cam[2] - up[2] * Z_cam[0]);
+    X_cam[2] = up[0] * Z_cam[1] - up[1] * Z_cam[0];
 
     normalizar(X_cam);
 
     Y_cam[0] = Z_cam[1] * X_cam[2] - Z_cam[2] * X_cam[1];
-    Y_cam[1] = -(Z_cam[2] * X_cam[0] - Z_cam[0] * X_cam[2]);
+    Y_cam[1] = -(Z_cam[0] * X_cam[2] - Z_cam[2] * X_cam[0]);
     Y_cam[2] = Z_cam[0] * X_cam[1] - Z_cam[1] * X_cam[0];
 
     
@@ -210,6 +209,8 @@ void calcular_mcsr(my_camera *cam)
     memcpy(Mcb + 4, Y_cam, 3 * sizeof(double));
     memcpy(Mcb + 8, Z_cam, 3 * sizeof(double));
     Mcb[15] = 1.0;
+    print_matrizea("Mcb", Mcb);
+    print_matrizea("Mco", Mco);
 
     memcpy(Mco, cam->coptr->mptr->m, 16 * sizeof(double));
     Mco[3] *= -1;
