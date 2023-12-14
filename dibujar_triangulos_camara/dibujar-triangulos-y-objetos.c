@@ -159,6 +159,21 @@ void print_matrizea(char *str, double to_print[16])
                to_print[i * 4 + 3]);
 }
 
+void calcular_mcsr(my_camera *cam)
+{
+    int i, j;
+    cam->Mcsr[3] = -(cam->coptr->mptr->m[0] * cam->coptr->mptr->m[3] + cam->coptr->mptr->m[4] * cam->coptr->mptr->m[7] + cam->coptr->mptr->m[8] * cam->coptr->mptr->m[11]);
+    cam->Mcsr[7] = -(cam->coptr->mptr->m[1] * cam->coptr->mptr->m[3] + cam->coptr->mptr->m[5] * cam->coptr->mptr->m[7] + cam->coptr->mptr->m[9] * cam->coptr->mptr->m[11]);
+    cam->Mcsr[11] = -(cam->coptr->mptr->m[2] * cam->coptr->mptr->m[3] + cam->coptr->mptr->m[6] * cam->coptr->mptr->m[7] + cam->coptr->mptr->m[10] * cam->coptr->mptr->m[11]);
+    
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < 3; j++)
+        {
+            cam->Mcsr[i * 4 + j] = cam->coptr->mptr->m[i * 4 + j];   
+        }
+    }
+}
 // TODO
 // aurrerago egitekoa
 // para más adelante
@@ -266,6 +281,7 @@ void dibujar_triangulo(triobj *optr, int i)
     punto *pgoiptr, *pbeheptr, *perdiptr;
     punto *pgoiptr2, *pbeheptr2, *perdiptr2;
     punto corte1, corte2;
+    double Modelview[16];
     int start1, star2;
     double aux[16];
     float t = 1, s = 1, q = 1;
@@ -279,6 +295,10 @@ void dibujar_triangulo(triobj *optr, int i)
         return;
     tptr = optr->triptr + i;
 
+    calcular_mcsr(sel_cptr);
+    print_matrizea("Mcsr", sel_cptr->Mcsr);
+    mxm(Modelview, sel_cptr->Mcsr, optr->mptr->m);
+    print_matrizea("Modelview", Modelview);
     printf("p1: %f, %f, %f, %f, %f\n", tptr->p1.x, tptr->p1.y, tptr->p1.z, tptr->p1.u, tptr->p1.v);
     printf("p2: %f, %f, %f, %f, %f\n", tptr->p2.x, tptr->p2.y, tptr->p2.z, tptr->p2.u, tptr->p2.v);
     printf("p3: %f, %f, %f, %f, %f\n", tptr->p3.x, tptr->p3.y, tptr->p3.z, tptr->p3.u, tptr->p3.v);
@@ -286,36 +306,36 @@ void dibujar_triangulo(triobj *optr, int i)
     // mxm(Mmodelview, my_cam.Mcsr, optr->mptr->m);
 
     // print_matrizea("Mmodelview", Mmodelview);
-    mxp(&p1, optr->mptr->m, tptr->p1);
-    mxp(&p2, optr->mptr->m, tptr->p2);
-    mxp(&p3, optr->mptr->m, tptr->p3);
+    mxp(&p1, Modelview, tptr->p1);
+    mxp(&p2, Modelview, tptr->p2);
+    mxp(&p3, Modelview, tptr->p3);
 
-    // if (persp)
-    // {
-    //     print_matrizea("Mp", Mp);
-    //     mxp(&p1, Mp, p1);
-    //     mxp(&p2, Mp, p2);
-    //     mxp(&p3, Mp, p3);
-    //     p1.x = p1.x / p1.w * 500.0;
-    //     // p1.x = p1.x/p1.w;
-    //     p1.y = p1.y / p1.w * 500.0;
-    //     // p1.y = p1.y/p1.w;
-    //     p1.z = -p1.z / p1.w;
-    //     p1.w = 1.0;
-    //     p2.x = p2.x / p2.w * 500.0;
-    //     // p2.x = p2.x/p2.w;
-    //     p2.y = p2.y / p2.w * 500.0;
-    //     // p2.y = p2.y/p2.w;
-    //     p2.z = -p2.z / p2.w;
-    //     // p2.z = -p2.z/p2.w;
-    //     p2.w = 1.0;
-    //     p3.x = p3.x / p3.w * 500.0;
-    //     // p3.x = p3.x/p3.w;
-    //     p3.y = p3.y / p3.w * 500.0;
-    //     // p3.y = p3.y/p3.w;
-    //     p3.z = -p3.z / p3.w;
-    //     p3.w = 1.0;
-    // }
+    if (persp)
+    {
+        print_matrizea("Mp", Mp);
+        mxp(&p1, Mp, p1);
+        mxp(&p2, Mp, p2);
+        mxp(&p3, Mp, p3);
+        p1.x = p1.x / p1.w * 500.0;
+        // p1.x = p1.x/p1.w;
+        p1.y = p1.y / p1.w * 500.0;
+        // p1.y = p1.y/p1.w;
+        p1.z = -p1.z / p1.w;
+        p1.w = 1.0;
+        p2.x = p2.x / p2.w * 500.0;
+        // p2.x = p2.x/p2.w;
+        p2.y = p2.y / p2.w * 500.0;
+        // p2.y = p2.y/p2.w;
+        p2.z = -p2.z / p2.w;
+        // p2.z = -p2.z/p2.w;
+        p2.w = 1.0;
+        p3.x = p3.x / p3.w * 500.0;
+        // p3.x = p3.x/p3.w;
+        p3.y = p3.y / p3.w * 500.0;
+        // p3.y = p3.y/p3.w;
+        p3.z = -p3.z / p3.w;
+        p3.w = 1.0;
+    }
     printf("p1 actual: %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v);
     printf("p2 actual: %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v);
     printf("p3 actual: %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v);
@@ -382,7 +402,6 @@ static void marraztu(void)
 
     if (objektuak == 1)
     {
-
         if (denak == 1)
         {
 
@@ -457,7 +476,6 @@ void read_from_file(char *fitx, int is_camera)
         // printf("objektu zerrendara doa informazioa...\n");
         if (is_camera)
         {
-            printf("Sobrevivo borja\n");
             cam_ptr->coptr = optr;
             cam_ptr->hptr = focptr;
             focptr = cam_ptr;
@@ -468,6 +486,7 @@ void read_from_file(char *fitx, int is_camera)
             sel_cptr->Mcsr[5] = 1.0;
             sel_cptr->Mcsr[10] = 1.0;
             sel_cptr->Mcsr[15] = 200.0;
+
             print_matrizea("Mcsr", focptr->Mcsr);
         }
         else
