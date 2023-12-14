@@ -274,9 +274,9 @@ void dibujar_triangulo(triobj *optr, int i)
         return;
     tptr = optr->triptr + i;
 
-    // printf("p1: %f, %f, %f, %f, %f\n", tptr->p1.x, tptr->p1.y, tptr->p1.z, tptr->p1.u, tptr->p1.v);
-    // printf("p2: %f, %f, %f, %f, %f\n", tptr->p2.x, tptr->p2.y, tptr->p2.z, tptr->p2.u, tptr->p2.v);
-    // printf("p3: %f, %f, %f, %f, %f\n", tptr->p3.x, tptr->p3.y, tptr->p3.z, tptr->p3.u, tptr->p3.v);
+    printf("p1: %f, %f, %f, %f, %f\n", tptr->p1.x, tptr->p1.y, tptr->p1.z, tptr->p1.u, tptr->p1.v);
+    printf("p2: %f, %f, %f, %f, %f\n", tptr->p2.x, tptr->p2.y, tptr->p2.z, tptr->p2.u, tptr->p2.v);
+    printf("p3: %f, %f, %f, %f, %f\n", tptr->p3.x, tptr->p3.y, tptr->p3.z, tptr->p3.u, tptr->p3.v);
 
     mxm(Mmodelview, my_cam.Mcsr, optr->mptr->m);
    
@@ -762,7 +762,6 @@ void perspectiva()
 
 void inicializar_camara()
 {
-    double pos[3] = {0, 0, 200};
     for (int i = 0; i < 3; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -779,12 +778,9 @@ void inicializar_camara()
         }
     }
     my_cam.Mcsr[15] = 1;
-    my_cam.Mcsr[3] = -200;
-    my_cam.Mcsr[7] = -200;
+    my_cam.Mcsr[3] = 0;
+    my_cam.Mcsr[7] = -0;
     my_cam.Mcsr[11] = -200;
-    
-
-
 }
 
 void calcular_centroide(triobj *triangulosptr, double posicion_camara[2])
@@ -943,13 +939,14 @@ int main(int argc, char **argv)
     printf("Leyendo camara...\n");
     // read_camera_from_file("cam.txt");
     read_from_file("k.txt");
+    sel_ptr->mptr->m[3]= -200;
     if (argc > 1){
         read_from_file(argv[1]);
     }
     else{
         read_from_file("z.txt");
     }
-    sel_ptr->mptr->m[3]= 400;
+    sel_ptr->mptr->m[3]= 200;
     glutMainLoop();
     return 0;
 }
