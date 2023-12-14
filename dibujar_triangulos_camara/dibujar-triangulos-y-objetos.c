@@ -376,7 +376,6 @@ static void marraztu(void)
     glLoadIdentity();
     glOrtho(-500.0, 500.0, -500.0, 500.0, 0.0, 500.0);
 
-    triangulosptr = sel_ptr->triptr;
     if (objektuak == 1)
     {
 
@@ -421,7 +420,6 @@ void read_from_file(char *fitx)
     }
     else
     {
-        triangulosptr = optr->triptr;
         // printf("objektuaren matrizea...\n");
         optr->mptr = (mlist *)malloc(sizeof(mlist));
         for (i = 0; i < 16; i++)
