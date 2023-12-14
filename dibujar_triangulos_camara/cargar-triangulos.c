@@ -177,24 +177,3 @@ int cargar_triangulos_color(char *fitxiz, int *hkopptr, hiruki **hptrptr, unsign
 	else
 		return (15);
 }
-
-/* * /
-void main(int argc, char*argv[])
-{
-int num_triangles,i;
-hiruki *tptr;
-unsigned char kolore[3];
-
-printf("%s fitxategitik triangeluak kargatzera\n",argv[1]);
-cargar_triangulos_color(argv[1], &num_triangles, &tptr,&(kolore[0]));
-for (i=0; i<num_triangles; i++)
-	{
-	printf("t: (%.1f, %.1f, %.1f) (%.1f, %.1f)", tptr[i].p1.x, tptr[i].p1.y, tptr[i].p1.z, tptr[i].p1.u, tptr[i].p1.v);
-	printf("   (%.1f, %.1f, %.1f) (%.1f, %.1f)", tptr[i].p2.x, tptr[i].p2.y, tptr[i].p2.z, tptr[i].p2.u, tptr[i].p2.v);
-	printf("   (%.1f, %.1f, %.1f) (%.1f, %.1f)\n", tptr[i].p3.x, tptr[i].p3.y, tptr[i].p3.z, tptr[i].p3.u, tptr[i].p3.v);
-	}
-printf("kolorea: %d, %d,%d\n",kolore[0],kolore[1],kolore[2]);
-}
-
-
- // */
