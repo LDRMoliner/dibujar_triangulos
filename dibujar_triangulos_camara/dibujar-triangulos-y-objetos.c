@@ -158,21 +158,68 @@ void print_matrizea(char *str, double to_print[16])
         printf("%lf, %lf, %lf, %lf\n", to_print[i * 4], to_print[i * 4 + 1], to_print[i * 4 + 2],
                to_print[i * 4 + 3]);
 }
+void normalizar(double vector[3])
+{
+    double length;
+    int i;
+    for (i = 0; i < 3; i++)
+    {
+        length += vector[i] * vector[i];
+    }
+    length = sqrt(length);
+    for (i = 0; i < 3; i++)
+    {
+        vector[i] = vector[i] / length;
+    }
+}
 
 void calcular_mcsr(my_camera *cam)
 {
     int i, j;
-    cam->Mcsr[3] = -(cam->coptr->mptr->m[0] * cam->coptr->mptr->m[3] + cam->coptr->mptr->m[4] * cam->coptr->mptr->m[7] + cam->coptr->mptr->m[8] * cam->coptr->mptr->m[11]);
-    cam->Mcsr[7] = -(cam->coptr->mptr->m[1] * cam->coptr->mptr->m[3] + cam->coptr->mptr->m[5] * cam->coptr->mptr->m[7] + cam->coptr->mptr->m[9] * cam->coptr->mptr->m[11]);
-    cam->Mcsr[11] = -(cam->coptr->mptr->m[2] * cam->coptr->mptr->m[3] + cam->coptr->mptr->m[6] * cam->coptr->mptr->m[7] + cam->coptr->mptr->m[10] * cam->coptr->mptr->m[11]);
+    double X_cam[3];
+    double Y_cam[3];
+    double Z_cam[3];
+    double Pos_cam[3];
+    double Mcb[16] = {0,0};
+    double Mco[16] = {0,0};
+    double at[3] = {0.0, 0.0, 0.0};
+    double up[3] = {0.0, 1.0, 0.0};
+
+    Pos_cam[0] = cam->coptr->mptr->m[3];
+    Pos_cam[1] = cam->coptr->mptr->m[7];
+    Pos_cam[2] = cam->coptr->mptr->m[11];   
+
+    Z_cam[0] = Pos_cam[0] - at[0];
+    Z_cam[1] = Pos_cam[1] - at[1];
+    Z_cam[2] = Pos_cam[2] - at[2];
+
+    normalizar(Z_cam);
+
+    X_cam[0] = up[1] * Z_cam[2] - up[2] * Z_cam[1];
+    X_cam[1] = -(up[2] * Z_cam[0] - up[0] * Z_cam[2]);
+    X_cam[2] = up[0] * Z_cam[2] - up[2] * Z_cam[0];
+
+    normalizar(X_cam);
+
+    Y_cam[0] = Z_cam[1] * X_cam[2] - Z_cam[2] * X_cam[1];
+    Y_cam[1] = -(Z_cam[2] * X_cam[0] - Z_cam[0] * X_cam[2]);
+    Y_cam[2] = Z_cam[0] * X_cam[1] - Z_cam[1] * X_cam[0];
+
     
-    for (i = 0; i < 3; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
-            cam->Mcsr[i * 4 + j] = cam->coptr->mptr->m[i * 4 + j];   
-        }
-    }
+    memcpy(Mcb, X_cam, 3 * sizeof(double));
+    memcpy(Mcb + 4, Y_cam, 3 * sizeof(double));
+    memcpy(Mcb + 8, Z_cam, 3 * sizeof(double));
+    Mcb[15] = 1.0;
+
+    memcpy(Mco, cam->coptr->mptr->m, 16 * sizeof(double));
+    Mco[3] *= -1;
+    Mco[7] *= -1;
+    Mco[11] *= -1;
+    print_matrizea("Mcb", Mcb);
+    print_matrizea("Mco", Mco);
+
+    mxm(cam->Mcsr, Mcb, Mco);
+    print_matrizea("Mcsr", cam->Mcsr);
 }
 // TODO
 // aurrerago egitekoa
@@ -180,7 +227,7 @@ void calcular_mcsr(my_camera *cam)
 void mxp(punto *pptr, double m[16], punto p)
 {
     // print_matrizea("");
-    pptr->x = p.x * m[0]  + p.y * m[1]  +  p.z * m[2] + m[3];
+    pptr->x = p.x * m[0] + p.y * m[1] + p.z * m[2] + m[3];
     pptr->y = p.x * m[4] + p.y * m[5] + p.z * m[6] + m[7];
     pptr->z = p.x * m[8] + p.y * m[9] + p.z * m[10] + m[11];
     pptr->u = p.u;
@@ -485,7 +532,7 @@ void read_from_file(char *fitx, int is_camera)
             sel_cptr->Mcsr[0] = 1.0;
             sel_cptr->Mcsr[5] = 1.0;
             sel_cptr->Mcsr[10] = 1.0;
-            sel_cptr->Mcsr[15] = 200.0;
+            sel_cptr->Mcsr[15] = 1.0;
 
             print_matrizea("Mcsr", focptr->Mcsr);
         }
@@ -864,11 +911,12 @@ int main(int argc, char **argv)
     aldaketa = 'r';
     ald_lokala = 1;
     perspectiva();
-    // inicializar_camara();
     printf("Leyendo camara...\n");
     read_from_file("cam.txt", 1);
+    sel_cptr->coptr->mptr->m[11] = 200;
     read_from_file("k.txt", 0);
     sel_ptr->mptr->m[3] = -200;
+    sel_ptr->mptr->m[11] = 200;
     if (argc > 1)
     {
         read_from_file(argv[1], 0);
@@ -879,6 +927,7 @@ int main(int argc, char **argv)
     }
 
     sel_ptr->mptr->m[3] = 200;
+    sel_ptr->mptr->m[11] = 200;
     glutMainLoop();
     return 0;
 }
