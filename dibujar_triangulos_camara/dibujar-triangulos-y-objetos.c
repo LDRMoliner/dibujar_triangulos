@@ -165,9 +165,9 @@ void print_matrizea(char *str, double to_print[16])
 void mxp(punto *pptr, double m[16], punto p)
 {
     // print_matrizea("");
-    pptr->x = m[0] * p.x + m[1] * p.y + m[2] * p.z + m[3];
-    pptr->y = m[4] * p.x + m[5] * p.y + m[6] * p.z + m[7];
-    pptr->z = m[8] * p.x + m[9] * p.y + m[10] * p.z + m[11];
+    pptr->x = p.x * m[0]  + p.y * m[1]  +  p.z * m[2] + m[3];
+    pptr->y = p.x * m[4] + p.y * m[5] + p.z * m[6] + m[7];
+    pptr->z = p.x * m[8] + p.y * m[9] + p.z * m[10] + m[11];
     pptr->u = p.u;
     pptr->v = p.v;
 }
@@ -290,32 +290,32 @@ void dibujar_triangulo(triobj *optr, int i)
     mxp(&p2, optr->mptr->m, tptr->p2);
     mxp(&p3, optr->mptr->m, tptr->p3);
 
-    if (persp)
-    {
-        print_matrizea("Mp", Mp);
-        mxp(&p1, Mp, p1);
-        mxp(&p2, Mp, p2);
-        mxp(&p3, Mp, p3);
-        p1.x = p1.x / p1.w * 500.0;
-        // p1.x = p1.x/p1.w;
-        p1.y = p1.y / p1.w * 500.0;
-        // p1.y = p1.y/p1.w;
-        p1.z = -p1.z / p1.w;
-        p1.w = 1.0;
-        p2.x = p2.x / p2.w * 500.0;
-        // p2.x = p2.x/p2.w;
-        p2.y = p2.y / p2.w * 500.0;
-        // p2.y = p2.y/p2.w;
-        p2.z = -p2.z / p2.w;
-        // p2.z = -p2.z/p2.w;
-        p2.w = 1.0;
-        p3.x = p3.x / p3.w * 500.0;
-        // p3.x = p3.x/p3.w;
-        p3.y = p3.y / p3.w * 500.0;
-        // p3.y = p3.y/p3.w;
-        p3.z = -p3.z / p3.w;
-        p3.w = 1.0;
-    }
+    // if (persp)
+    // {
+    //     print_matrizea("Mp", Mp);
+    //     mxp(&p1, Mp, p1);
+    //     mxp(&p2, Mp, p2);
+    //     mxp(&p3, Mp, p3);
+    //     p1.x = p1.x / p1.w * 500.0;
+    //     // p1.x = p1.x/p1.w;
+    //     p1.y = p1.y / p1.w * 500.0;
+    //     // p1.y = p1.y/p1.w;
+    //     p1.z = -p1.z / p1.w;
+    //     p1.w = 1.0;
+    //     p2.x = p2.x / p2.w * 500.0;
+    //     // p2.x = p2.x/p2.w;
+    //     p2.y = p2.y / p2.w * 500.0;
+    //     // p2.y = p2.y/p2.w;
+    //     p2.z = -p2.z / p2.w;
+    //     // p2.z = -p2.z/p2.w;
+    //     p2.w = 1.0;
+    //     p3.x = p3.x / p3.w * 500.0;
+    //     // p3.x = p3.x/p3.w;
+    //     p3.y = p3.y / p3.w * 500.0;
+    //     // p3.y = p3.y/p3.w;
+    //     p3.z = -p3.z / p3.w;
+    //     p3.w = 1.0;
+    // }
     printf("p1 actual: %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v);
     printf("p2 actual: %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v);
     printf("p3 actual: %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v);
@@ -701,6 +701,7 @@ static void teklatua(unsigned char key, int x, int y)
         y_aldaketa(1);
         break;
     case 'z':
+        printf("z\n");
         z_aldaketa(1);
         break;
     case 'X':
