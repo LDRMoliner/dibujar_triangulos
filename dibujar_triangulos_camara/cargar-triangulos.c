@@ -110,16 +110,25 @@ int cargar_triangulos_color(char *fitxiz, int *hkopptr, hiruki **hptrptr, unsign
 				(*hptrptr)[i].p1.x = v1;
 				(*hptrptr)[i].p1.y = v2;
 				(*hptrptr)[i].p1.z = v3;
+
+				(*hptrptr)[i].p1.w = 1.0;
+
 				(*hptrptr)[i].p1.u = v4;
 				(*hptrptr)[i].p1.v = v5;
 				(*hptrptr)[i].p2.x = v6;
 				(*hptrptr)[i].p2.y = v7;
 				(*hptrptr)[i].p2.z = v8;
+
+				(*hptrptr)[i].p2.w = 1.0;
+
 				(*hptrptr)[i].p2.u = v9;
 				(*hptrptr)[i].p2.v = v10;
 				(*hptrptr)[i].p3.x = v11;
 				(*hptrptr)[i].p3.y = v12;
 				(*hptrptr)[i].p3.z = v13;
+
+				(*hptrptr)[i].p3.w = 1.0;
+
 				(*hptrptr)[i].p3.u = v14;
 				(*hptrptr)[i].p3.v = v15;
 			}
@@ -131,12 +140,21 @@ int cargar_triangulos_color(char *fitxiz, int *hkopptr, hiruki **hptrptr, unsign
 					(*hptrptr)[i].p1.x = v1;
 					(*hptrptr)[i].p1.y = v2;
 					(*hptrptr)[i].p1.z = v3;
+
+					(*hptrptr)[i].p1.w = 1.0;
+
 					(*hptrptr)[i].p2.x = v4;
 					(*hptrptr)[i].p2.y = v5;
 					(*hptrptr)[i].p2.z = v6;
+
+					(*hptrptr)[i].p2.w = 1.0;
+
 					(*hptrptr)[i].p3.x = v7;
 					(*hptrptr)[i].p3.y = v8;
 					(*hptrptr)[i].p3.z = v9;
+
+					(*hptrptr)[i].p3.w = 1.0;
+
 					(*hptrptr)[i].p1.u = 0.0;
 					(*hptrptr)[i].p1.v = 0.0;
 					(*hptrptr)[i].p2.u = 0.0;

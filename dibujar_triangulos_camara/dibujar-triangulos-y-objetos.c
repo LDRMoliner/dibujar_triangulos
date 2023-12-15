@@ -5,9 +5,6 @@
 //	http://www.ehu.eus/if
 //
 // to compile it: gcc dibujar-triangulos-y-objetos.c -lGL -lGLU -lglut
-//
-//
-//
 
 #include <GL/glut.h>
 #include <stdio.h>
@@ -32,9 +29,8 @@ typedef struct triobj
 
 typedef struct my_camera
 {
-    struct triobj *coptr;
     double Mcsr[16];
-    struct my_camera *hptr;
+    mlist *mptr;
 } my_camera;
 
 // testuraren informazioa
@@ -49,13 +45,12 @@ triobj *foptr;
 triobj *sel_ptr;
 
 // Direcciones de los objetos que SÍ son cámaras.
-my_camera *focptr;
-my_camera *sel_cptr;
+my_camera *cam_ptr;
 
 // Aquí se guardan los valores para las decisiones que se toman.
 int denak;
 int lineak;
-int cam;
+int camara;
 int persp;
 int objektuak;
 char aldaketa;
@@ -185,9 +180,9 @@ void calcular_mcsr(my_camera *cam)
     double at[3] = {0.0};
     double up[3] = {0.0, 1.0, 0.0};
 
-    Pos_cam[0] = cam->coptr->mptr->m[3];
-    Pos_cam[1] = cam->coptr->mptr->m[7];
-    Pos_cam[2] = cam->coptr->mptr->m[11];   
+    Pos_cam[0] = cam->mptr->m[3];
+    Pos_cam[1] = cam->mptr->m[7];
+    Pos_cam[2] = cam->mptr->m[11];
 
     Z_cam[0] = Pos_cam[0] - at[0];
     Z_cam[1] = Pos_cam[1] - at[1];
@@ -204,7 +199,6 @@ void calcular_mcsr(my_camera *cam)
     Y_cam[1] = -(Z_cam[0] * X_cam[2] - Z_cam[2] * X_cam[0]);
     Y_cam[2] = Z_cam[0] * X_cam[1] - Z_cam[1] * X_cam[0];
 
-    
     memcpy(Mcb, X_cam, 3 * sizeof(double));
     memcpy(Mcb + 4, Y_cam, 3 * sizeof(double));
     memcpy(Mcb + 8, Z_cam, 3 * sizeof(double));
@@ -212,7 +206,7 @@ void calcular_mcsr(my_camera *cam)
     print_matrizea("Mcb", Mcb);
     print_matrizea("Mco", Mco);
 
-    memcpy(Mco, cam->coptr->mptr->m, 16 * sizeof(double));
+    memcpy(Mco, cam->mptr->m, 16 * sizeof(double));
     Mco[3] *= -1;
     Mco[7] *= -1;
     Mco[11] *= -1;
@@ -222,6 +216,7 @@ void calcular_mcsr(my_camera *cam)
     mxm(cam->Mcsr, Mcb, Mco);
     print_matrizea("Mcsr", cam->Mcsr);
 }
+
 // TODO
 // aurrerago egitekoa
 // para más adelante
@@ -231,6 +226,7 @@ void mxp(punto *pptr, double m[16], punto p)
     pptr->x = p.x * m[0] + p.y * m[1] + p.z * m[2] + m[3];
     pptr->y = p.x * m[4] + p.y * m[5] + p.z * m[6] + m[7];
     pptr->z = p.x * m[8] + p.y * m[9] + p.z * m[10] + m[11];
+    pptr->w = p.x * m[12] + p.y * m[13] + p.z * m[14] + m[15];
     pptr->u = p.u;
     pptr->v = p.v;
 }
@@ -329,7 +325,6 @@ void dibujar_triangulo(triobj *optr, int i)
     punto *pgoiptr, *pbeheptr, *perdiptr;
     punto *pgoiptr2, *pbeheptr2, *perdiptr2;
     punto corte1, corte2;
-    double Modelview[16];
     int start1, star2;
     double aux[16];
     float t = 1, s = 1, q = 1;
@@ -342,51 +337,47 @@ void dibujar_triangulo(triobj *optr, int i)
     if (i >= optr->num_triangles)
         return;
     tptr = optr->triptr + i;
+    print_matrizea("Mcsr", cam_ptr->Mcsr);
+    // mxm(Modelview, sel_cptr->Mcsr, optr->mptr->m);
+    print_matrizea("Modelview", Mmodelview);
 
-    calcular_mcsr(sel_cptr);
-    print_matrizea("Mcsr", sel_cptr->Mcsr);
-    mxm(Modelview, sel_cptr->Mcsr, optr->mptr->m);
-    print_matrizea("Modelview", Modelview);
-    printf("p1: %f, %f, %f, %f, %f\n", tptr->p1.x, tptr->p1.y, tptr->p1.z, tptr->p1.u, tptr->p1.v);
-    printf("p2: %f, %f, %f, %f, %f\n", tptr->p2.x, tptr->p2.y, tptr->p2.z, tptr->p2.u, tptr->p2.v);
-    printf("p3: %f, %f, %f, %f, %f\n", tptr->p3.x, tptr->p3.y, tptr->p3.z, tptr->p3.u, tptr->p3.v);
-
-    // mxm(Mmodelview, my_cam.Mcsr, optr->mptr->m);
-
-    // print_matrizea("Mmodelview", Mmodelview);
-    mxp(&p1, Modelview, tptr->p1);
-    mxp(&p2, Modelview, tptr->p2);
-    mxp(&p3, Modelview, tptr->p3);
+    printf("p1: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p1.x, optr->triptr[i].p1.y, optr->triptr[i].p1.z, optr->triptr[i].p1.u, optr->triptr[i].p1.v, optr->triptr[i].p1.w);
+    printf("p2: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p2.x, optr->triptr[i].p2.y, optr->triptr[i].p2.z, optr->triptr[i].p2.u, optr->triptr[i].p2.v, optr->triptr[i].p2.w);
+    printf("p3: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p3.x, optr->triptr[i].p3.y, optr->triptr[i].p3.z, optr->triptr[i].p3.u, optr->triptr[i].p3.v, optr->triptr[i].p3.w);
+    mxp(&p1, Mmodelview, tptr->p1);
+    mxp(&p2, Mmodelview, tptr->p2);
+    mxp(&p3, Mmodelview, tptr->p3);
 
     if (persp)
     {
-        print_matrizea("Mp", Mp);
-        mxp(&p1, Mp, p1);
-        mxp(&p2, Mp, p2);
-        mxp(&p3, Mp, p3);
-        p1.x = p1.x / p1.w * 500.0;
+        printf("p1: %f, %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v, p1.w);
+        printf("p2: %f, %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v, p2.w);
+        printf("p3: %f, %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v, p3.w);
+
+        p1.x = (p1.x * 500 / p1.w);
         // p1.x = p1.x/p1.w;
-        p1.y = p1.y / p1.w * 500.0;
+        p1.y = (p1.y * 500.0 / p1.w);
         // p1.y = p1.y/p1.w;
-        p1.z = -p1.z / p1.w;
+        p1.z = (-p1.z * 500.0 / p1.w);
         p1.w = 1.0;
-        p2.x = p2.x / p2.w * 500.0;
+        p2.x = (p2.x * 500.0 / p2.w);
         // p2.x = p2.x/p2.w;
-        p2.y = p2.y / p2.w * 500.0;
+        p2.y = (p2.y * 500.0 / p2.w);
         // p2.y = p2.y/p2.w;
-        p2.z = -p2.z / p2.w;
+        p2.z = (-p2.z * 500.0 / p2.w);
         // p2.z = -p2.z/p2.w;
         p2.w = 1.0;
-        p3.x = p3.x / p3.w * 500.0;
+        p3.x = (p3.x * 500.0 / p3.w);
         // p3.x = p3.x/p3.w;
-        p3.y = p3.y / p3.w * 500.0;
+        p3.y = (p3.y * 500.0 / p3.w);
         // p3.y = p3.y/p3.w;
-        p3.z = -p3.z / p3.w;
+        p3.z = (-p3.z * 500.0 / p3.w);
         p3.w = 1.0;
     }
-    printf("p1 actual: %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v);
-    printf("p2 actual: %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v);
-    printf("p3 actual: %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v);
+    printf("p1: %f, %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v, p1.w);
+    printf("p2: %f, %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v, p2.w);
+    printf("p3: %f, %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v, p3.w);
+
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
@@ -448,6 +439,12 @@ static void marraztu(void)
     glLoadIdentity();
     glOrtho(-500.0, 500.0, -500.0, 500.0, 0.0, 500.0);
 
+    for (i = 0; i < sel_ptr->num_triangles; i++)
+    {
+        printf("p1: %f, %f, %f, %f, %f, %f\n", sel_ptr->triptr[i].p1.x, sel_ptr->triptr[i].p1.y, sel_ptr->triptr[i].p1.z, sel_ptr->triptr[i].p1.u, sel_ptr->triptr[i].p1.v, sel_ptr->triptr[i].p1.w);
+        printf("p2: %f, %f, %f, %f, %f, %f\n", sel_ptr->triptr[i].p2.x, sel_ptr->triptr[i].p2.y, sel_ptr->triptr[i].p2.z, sel_ptr->triptr[i].p2.u, sel_ptr->triptr[i].p2.v, sel_ptr->triptr[i].p2.w);
+        printf("p3: %f, %f, %f, %f, %f, %f\n", sel_ptr->triptr[i].p3.x, sel_ptr->triptr[i].p3.y, sel_ptr->triptr[i].p3.z, sel_ptr->triptr[i].p3.u, sel_ptr->triptr[i].p3.v, sel_ptr->triptr[i].p3.w);
+    }
     if (objektuak == 1)
     {
         if (denak == 1)
@@ -455,17 +452,14 @@ static void marraztu(void)
 
             for (auxptr = foptr; auxptr != 0; auxptr = auxptr->hptr)
             {
+                mxm(Mmodelview, cam_ptr->Mcsr, auxptr->mptr->m);
+                    if (persp == 1)
+                    {
+                        mxm(aux, Mp, Mmodelview);
+                        memcpy(Mmodelview, aux, sizeof(aux));
+                    }
                 for (i = 0; i < auxptr->num_triangles; i++)
                 {
-                    dibujar_triangulo(auxptr, i);
-                }
-            }
-            printf("%d", focptr->coptr == 0);
-            for (auxptr = focptr->coptr; auxptr != 0; auxptr = auxptr->hptr)
-            {
-                for (i = 0; i < auxptr->num_triangles; i++)
-                {
-                    printf("A dibujar\n");
                     dibujar_triangulo(auxptr, i);
                 }
             }
@@ -476,22 +470,16 @@ static void marraztu(void)
             {
                 dibujar_triangulo(sel_ptr, i);
             }
-            printf("Agur\n");
-            for (i = 0; i < sel_cptr->coptr->num_triangles; i++)
-            {
-                dibujar_triangulo(sel_cptr->coptr, i);
-            }
         }
     }
     else
     {
         dibujar_triangulo(sel_ptr, indexx);
-        dibujar_triangulo(sel_cptr->coptr, indexx);
     }
     glFlush();
 }
 
-void read_from_file(char *fitx, int is_camera)
+void read_from_file(char *fitx)
 {
     int i, retval;
     triobj *optr;
@@ -509,7 +497,12 @@ void read_from_file(char *fitx, int is_camera)
     }
     else
     {
-
+        for (i = 0; i < optr->num_triangles; i++)
+        {
+            printf("p1: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p1.x, optr->triptr[i].p1.y, optr->triptr[i].p1.z, optr->triptr[i].p1.u, optr->triptr[i].p1.v, optr->triptr[i].p1.w);
+            printf("p2: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p2.x, optr->triptr[i].p2.y, optr->triptr[i].p2.z, optr->triptr[i].p2.u, optr->triptr[i].p2.v, optr->triptr[i].p2.w);
+            printf("p3: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p3.x, optr->triptr[i].p3.y, optr->triptr[i].p3.z, optr->triptr[i].p3.u, optr->triptr[i].p3.v, optr->triptr[i].p3.w);
+        }
         // printf("objektuaren matrizea...\n");
         optr->mptr = (mlist *)malloc(sizeof(mlist));
 
@@ -520,29 +513,10 @@ void read_from_file(char *fitx, int is_camera)
         optr->mptr->m[10] = 1.0;
         optr->mptr->m[15] = 1.0;
         optr->mptr->hptr = 0;
-
         // printf("objektu zerrendara doa informazioa...\n");
-        if (is_camera)
-        {
-            cam_ptr->coptr = optr;
-            cam_ptr->hptr = focptr;
-            focptr = cam_ptr;
-            sel_cptr = cam_ptr;
-            for (i = 0; i < 16; i++)
-                sel_cptr->Mcsr[i] = 0.0;
-            sel_cptr->Mcsr[0] = 1.0;
-            sel_cptr->Mcsr[5] = 1.0;
-            sel_cptr->Mcsr[10] = 1.0;
-            sel_cptr->Mcsr[15] = 1.0;
-
-            print_matrizea("Mcsr", focptr->Mcsr);
-        }
-        else
-        {
-            optr->hptr = foptr;
-            foptr = optr;
-            sel_ptr = optr;
-        }
+        optr->hptr = foptr;
+        foptr = optr;
+        sel_ptr = optr;
     }
     printf("datuak irakurrita\nLectura finalizada\n");
 }
@@ -552,9 +526,23 @@ void transformacion_principal(double m[16])
     double resultado[16];
     mlist *new_m = (mlist *)malloc(sizeof(mlist));
     int i = 0;
-
+    // if (camara == 1)
+    // {
+    //     mxm(resultado, sel_cptr->coptr->mptr->m, m);
+    //     for (i = 0; i < 16; i++)
+    //     {
+    //         new_m->m[i] = resultado[i];
+    //     }
+    //     new_m->hptr = sel_cptr->coptr->mptr;
+    //     sel_cptr->coptr->mptr = new_m;
+    //     print_matrizea("", sel_cptr->coptr->mptr->m);
+    //     return;
+    // }
     if (ald_lokala == 1)
     {
+        if (camara == 1)
+        {
+        }
         mxm(resultado, sel_ptr->mptr->m, m);
     }
     else
@@ -728,8 +716,14 @@ static void teklatua(unsigned char key, int x, int y)
     case 'd':
         if (denak == 1)
             denak = 0;
-        else
+        else if (denak == 0)
             denak = 1;
+        break;
+    case 'c':
+        if (camara == 1)
+            camara = 0;
+        else
+            camara = 1;
         break;
     case 'o':
         if (objektuak == 1)
@@ -807,7 +801,7 @@ static void teklatua(unsigned char key, int x, int y)
         /*Ask for file*/
         printf("idatzi fitxategi izena\n");
         scanf("%s", &(fitxiz[0]));
-        read_from_file(fitxiz, 0);
+        read_from_file(fitxiz);
         indexx = 0;
         break;
         /* case 'S':  // save to file
@@ -863,7 +857,7 @@ void perspectiva()
     r = 5.0;
     b = -5.0;
     t = 5.0;
-    n = 1.0;
+    n = 10.0;
     f = 1000.0;
 
     Mp[0] = (2 * n) / (r - l);
@@ -876,6 +870,33 @@ void perspectiva()
 
     printf("Perspectiva:\n");
     print_matrizea(" ", Mp);
+}
+
+void inicializar_camara()
+{
+    int i, j;
+    cam_ptr = (my_camera *)malloc(sizeof(my_camera));
+    cam_ptr->mptr = (mlist *)malloc(sizeof(mlist));
+    for (i = 0; i < 4; i++)
+    {
+        for (j = 0; j < 4; j++)
+        {
+            if (i == j)
+            {
+                cam_ptr->mptr->m[4 * i + j] = 1.0;
+                cam_ptr->Mcsr[4 * i + j] = 1.0;
+            }
+            else
+            {
+                cam_ptr->mptr->m[4 * i + j] = 0;
+                cam_ptr->Mcsr[4 * i + j] = 0;
+            }
+        }
+    }
+    cam_ptr->mptr->m[11] = 200;
+    print_matrizea("Mcsr", cam_ptr->Mcsr);
+    print_matrizea("Mco", cam_ptr->mptr->m);
+    calcular_mcsr(cam_ptr);
 }
 
 int main(int argc, char **argv)
@@ -898,37 +919,35 @@ int main(int argc, char **argv)
         printf("Ez dago texturaren fitxategia (testura.ppm)\n");
         exit(-1);
     }
-
     glClearColor(0.0f, 0.0f, 0.7f, 1.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
     denak = 1;
     lineak = 1;
-    persp = 0;
+    persp = 1;
     objektuak = 1;
-    cam = 0;
+    camara = 0;
     foptr = 0;
     sel_ptr = 0;
     aldaketa = 'r';
     ald_lokala = 1;
     perspectiva();
-    printf("Leyendo camara...\n");
-    read_from_file("cam.txt", 1);
-    sel_cptr->coptr->mptr->m[11] = 200;
-    read_from_file("k.txt", 0);
+    printf("Preparando la camara...\n");
+    inicializar_camara();
+    read_from_file("k.txt");
     sel_ptr->mptr->m[3] = -200;
-    sel_ptr->mptr->m[11] = 200;
+    //  sel_ptr->mptr->m[11] = 200;
     if (argc > 1)
     {
-        read_from_file(argv[1], 0);
+        read_from_file(argv[1]);
     }
     else
     {
-        read_from_file("z.txt", 0);
+        read_from_file("z.txt");
     }
 
     sel_ptr->mptr->m[3] = 200;
-    sel_ptr->mptr->m[11] = 200;
+    //    sel_ptr->mptr->m[11] = 200;
     glutMainLoop();
     return 0;
 }
