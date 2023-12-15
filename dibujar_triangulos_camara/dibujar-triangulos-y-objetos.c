@@ -526,18 +526,19 @@ void transformacion_principal(double m[16])
     double resultado[16];
     mlist *new_m = (mlist *)malloc(sizeof(mlist));
     int i = 0;
-    // if (camara == 1)
-    // {
-    //     mxm(resultado, sel_cptr->coptr->mptr->m, m);
-    //     for (i = 0; i < 16; i++)
-    //     {
-    //         new_m->m[i] = resultado[i];
-    //     }
-    //     new_m->hptr = sel_cptr->coptr->mptr;
-    //     sel_cptr->coptr->mptr = new_m;
-    //     print_matrizea("", sel_cptr->coptr->mptr->m);
-    //     return;
-    // }
+    if (camara == 1)
+    {
+        mxm(resultado, cam_ptr->mptr->m, m);
+        for (i = 0; i < 16; i++)
+        {
+            new_m->m[i] = resultado[i];
+        }
+        new_m->hptr = cam_ptr->mptr;
+        cam_ptr->mptr = new_m;
+        print_matrizea("Camera m", cam_ptr->mptr->m);
+        calcular_mcsr(cam_ptr);
+        return;
+    }
     if (ald_lokala == 1)
     {
         if (camara == 1)
