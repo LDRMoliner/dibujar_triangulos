@@ -321,7 +321,7 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
 
 void mpxptr(punto *pt)
 {
-    mxp(pt, Mmodelview, *pt);
+    mxp(pt, Mp, *pt);
     printf("punto: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
     if (pt->w == 0)
         pt->w = -1.0; 
