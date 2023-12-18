@@ -319,6 +319,18 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
     }
 }
 
+void mpxptr(punto *pt)
+{
+    mxp(pt, Mmodelview, *pt);
+    printf("punto: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
+    if (pt->w == 0)
+        pt->w = -1.0; 
+    pt->x = (pt->x * 500) / pt->w;
+    pt->y = (pt->y * 500.0) / pt->w;
+    pt->z = (-pt->z * 500.0) /pt->w;
+    pt->w = 1.0;
+}
+
 void dibujar_triangulo(triobj *optr, int i)
 {
     hiruki *tptr;
@@ -338,6 +350,9 @@ void dibujar_triangulo(triobj *optr, int i)
         return;
     tptr = optr->triptr + i;
     print_matrizea("Mcsr", cam_ptr->Mcsr);
+    print_matrizea("Moptr", optr->mptr->m);
+    printf("Posicion del objeto:\n");
+    printf("x: %f, y: %f, z: %f\n", optr->mptr->m[3], optr->mptr->m[7], optr->mptr->m[11]);
     // mxm(Modelview, sel_cptr->Mcsr, optr->mptr->m);
     print_matrizea("Modelview", Mmodelview);
 
@@ -353,26 +368,9 @@ void dibujar_triangulo(triobj *optr, int i)
         printf("p1: %f, %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v, p1.w);
         printf("p2: %f, %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v, p2.w);
         printf("p3: %f, %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v, p3.w);
-
-        p1.x = (p1.x * 500 / p1.w);
-        // p1.x = p1.x/p1.w;
-        p1.y = (p1.y * 500.0 / p1.w);
-        // p1.y = p1.y/p1.w;
-        p1.z = (-p1.z * 500.0 / p1.w);
-        p1.w = 1.0;
-        p2.x = (p2.x * 500.0 / p2.w);
-        // p2.x = p2.x/p2.w;
-        p2.y = (p2.y * 500.0 / p2.w);
-        // p2.y = p2.y/p2.w;
-        p2.z = (-p2.z * 500.0 / p2.w);
-        // p2.z = -p2.z/p2.w;
-        p2.w = 1.0;
-        p3.x = (p3.x * 500.0 / p3.w);
-        // p3.x = p3.x/p3.w;
-        p3.y = (p3.y * 500.0 / p3.w);
-        // p3.y = p3.y/p3.w;
-        p3.z = (-p3.z * 500.0 / p3.w);
-        p3.w = 1.0;
+        mpxptr(&p1);
+        mpxptr(&p2);
+        mpxptr(&p3);
     }
     printf("p1: %f, %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v, p1.w);
     printf("p2: %f, %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v, p2.w);
@@ -453,11 +451,6 @@ static void marraztu(void)
             for (auxptr = foptr; auxptr != 0; auxptr = auxptr->hptr)
             {
                 mxm(Mmodelview, cam_ptr->Mcsr, auxptr->mptr->m);
-                    if (persp == 1)
-                    {
-                        mxm(aux, Mp, Mmodelview);
-                        memcpy(Mmodelview, aux, sizeof(aux));
-                    }
                 for (i = 0; i < auxptr->num_triangles; i++)
                 {
                     dibujar_triangulo(auxptr, i);
@@ -528,7 +521,7 @@ void transformacion_principal(double m[16])
     int i = 0;
     if (camara == 1)
     {
-        mxm(resultado, cam_ptr->mptr->m, m);
+        mxm(resultado, m, cam_ptr->mptr->m);
         for (i = 0; i < 16; i++)
         {
             new_m->m[i] = resultado[i];
@@ -541,9 +534,6 @@ void transformacion_principal(double m[16])
     }
     if (ald_lokala == 1)
     {
-        if (camara == 1)
-        {
-        }
         mxm(resultado, sel_ptr->mptr->m, m);
     }
     else
@@ -671,10 +661,10 @@ void z_aldaketa(int dir)
     {
         return;
     }
-    m[0] = cos(exponent * 0.075);
-    m[1] = -sin(exponent * 0.075);
-    m[4] = sin(exponent * 0.075);
-    m[5] = cos(exponent * 0.075);
+    m[0] = cos(exponent * 0.100);
+    m[1] = -sin(exponent * 0.100);
+    m[4] = sin(exponent * 0.100);
+    m[5] = cos(exponent * 0.100);
     m[10] = 1;
     print_matrizea("Aldaketa", m);
     transformacion_principal(m);
@@ -858,8 +848,8 @@ void perspectiva()
     r = 5.0;
     b = -5.0;
     t = 5.0;
-    n = 10.0;
-    f = 1000.0;
+    n = 5.0;
+    f = 50000.0;
 
     Mp[0] = (2 * n) / (r - l);
     Mp[2] = (r + l) / (r - l);
@@ -927,7 +917,7 @@ int main(int argc, char **argv)
     lineak = 1;
     persp = 1;
     objektuak = 1;
-    camara = 0;
+    camara = 1;
     foptr = 0;
     sel_ptr = 0;
     aldaketa = 'r';
