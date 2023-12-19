@@ -25,6 +25,7 @@ int main() {
     double prueba[16] = {0,0};
 
     mxm (prueba, sourceArray, sourceArray);
+    
     // Copy the first four elements from sourceArray to destinationArray
     memcpy(destinationArray + 4, sourceArray, sizeof(int) * 4);
 

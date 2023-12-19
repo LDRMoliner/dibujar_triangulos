@@ -58,6 +58,7 @@ char aldaketa;
 int ald_lokala;
 unsigned char *colorv;
 double Mp[16] = {0.0};
+double at[3] = {0.0};
 double Mmodelview[16] = {0.0};
 
 char fitxiz[100];
@@ -178,8 +179,9 @@ void calcular_mcsr(my_camera *cam)
     double Pos_cam[3] = {0.0};
     double Mcb[16] = {0.0};
     double Mco[16] = {0.0};
-    double at[3] = {0.0};
     double up[3] = {0.0, 1.0, 0.0};
+
+    print_matrizea("Mcsr", cam->mptr->m);
 
     Pos_cam[0] = cam->mptr->m[3];
     Pos_cam[1] = cam->mptr->m[7];
@@ -194,11 +196,15 @@ void calcular_mcsr(my_camera *cam)
     X_cam[1] = -(up[0] * Z_cam[2] - up[2] * Z_cam[0]);
     X_cam[2] = up[0] * Z_cam[1] - up[1] * Z_cam[0];
 
+    printf("Vector X_cam: %f, %f, %f\n", X_cam[0], X_cam[1], X_cam[2]);
+    printf("Vector Z_cam: %f, %f, %f\n", Z_cam[0], Z_cam[1], Z_cam[2]);
+
     normalizar(X_cam);
 
     Y_cam[0] = Z_cam[1] * X_cam[2] - Z_cam[2] * X_cam[1];
     Y_cam[1] = -(Z_cam[0] * X_cam[2] - Z_cam[2] * X_cam[0]);
     Y_cam[2] = Z_cam[0] * X_cam[1] - Z_cam[1] * X_cam[0];
+    printf("Vector Y_cam: %f, %f, %f\n", Y_cam[0], Y_cam[1], Y_cam[2]);
 
     memcpy(Mcb, X_cam, 3 * sizeof(double));
     memcpy(Mcb + 4, Y_cam, 3 * sizeof(double));
@@ -531,63 +537,34 @@ void transformacion_principal(double m[16])
     int i;
     int j;
     mlist *new_m = (mlist *)malloc(sizeof(mlist));
-    if (ald_lokala == 1)
+    if (camara == 1)
     {
-        if (camara == 1)
+        print_matrizea("Matrices a multiplicar: ", cam_ptr->mptr->m);
+        print_matrizea("Con por la izquierda", m);
+        if (ald_lokala == 1)
         {
-            print_matrizea("Matrices a multiplicar: ", cam_ptr->mptr->m);
-            print_matrizea("Con por la izquierda", m);
             mxm(new_m->m, cam_ptr->mptr->m, m);
-            print_matrizea("Resultado es:", new_m->m);
-            new_m->hptr = cam_ptr->mptr;
-            cam_ptr->mptr = new_m;
-            print_matrizea("Camera m", cam_ptr->mptr->m);
-            calcular_mcsr(cam_ptr);
-            return;
         }
         else
         {
-            mxm(new_m->m, sel_ptr->mptr->m, m);
+            mxm(new_m->m, m, cam_ptr->mptr->m);
         }
+        print_matrizea("Resultado es:", new_m->m);
+        new_m->hptr = cam_ptr->mptr;
+        cam_ptr->mptr = new_m;
+        print_matrizea("Camera m", cam_ptr->mptr->m);
+        calcular_mcsr(cam_ptr);
+        return;
+    }
+    if (ald_lokala == 1)
+    {
+        mxm(new_m->m, sel_ptr->mptr->m, m);
     }
     else
     {
-        if (camara == 1)
-        {
-            
-            for (i = 0; i < 4; i++)
-            {
-                for (j = 0; j < 4; j++)
-                {
-                    if (i == j)
-                    {
-                        Mat[i * 4 + j] = 1;
-                    }
-                    else
-                    {
-                        Mat[i * 4 + j] = 0;
-                    }
-                }
-            }
-            Mat[3] = -sel_ptr->mptr->m[3];
-            Mat[7] = -sel_ptr->mptr->m[7];
-            Mat[11] = -sel_ptr->mptr->m[11];
-            mxm(resultado, m, Mat);            
-            Mat[3] = -Mat[3];
-            Mat[7] = -Mat[7];
-            Mat[11] = -Mat[11];
-            mxm(new_m->m, Mat, resultado);
-            new_m->hptr = cam_ptr->mptr;
-            cam_ptr->mptr = new_m;
-            print_matrizea("Camera m", cam_ptr->mptr->m);
-            calcular_mcsr(cam_ptr);
-            return;
-        }
-        else
-        {
-            mxm(new_m->m, m, sel_ptr->mptr->m);
-        }
+        mxm(new_m->m, m, sel_ptr->mptr->m);
     }
+
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
     print_matrizea("", sel_ptr->mptr->m);
@@ -766,7 +743,11 @@ static void teklatua(unsigned char key, int x, int y)
         if (camara == 1)
             camara = 0;
         else
+        {
+            if (ald_lokala == 0)
+                ald_lokala = 1;
             camara = 1;
+        }
         break;
     case 'o':
         if (objektuak == 1)
@@ -789,8 +770,7 @@ static void teklatua(unsigned char key, int x, int y)
     case 'g':
         if (ald_lokala == 1)
             ald_lokala = 0;
-        else
-            ald_lokala = 1;
+        ald_lokala = 1;
         break;
     case 's':
         s_aldaketa(0);
