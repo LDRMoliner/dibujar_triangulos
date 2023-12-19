@@ -50,6 +50,7 @@ my_camera *cam_ptr;
 // Aquí se guardan los valores para las decisiones que se toman.
 int denak;
 int lineak;
+int analisis;
 int camara;
 int persp;
 int objektuak;
@@ -324,10 +325,10 @@ void mpxptr(punto *pt)
     mxp(pt, Mp, *pt);
     printf("punto: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
     if (pt->w == 0)
-        pt->w = -1.0; 
+        pt->w = -1.0;
     pt->x = (pt->x * 500) / pt->w;
     pt->y = (pt->y * 500.0) / pt->w;
-    pt->z = (-pt->z * 500.0) /pt->w;
+    pt->z = (-pt->z * 500.0) / pt->w;
     pt->w = 1.0;
 }
 
@@ -450,7 +451,14 @@ static void marraztu(void)
 
             for (auxptr = foptr; auxptr != 0; auxptr = auxptr->hptr)
             {
-                mxm(Mmodelview, cam_ptr->Mcsr, auxptr->mptr->m);
+                if (ald_lokala == 1)
+                {
+                    mxm(Mmodelview, cam_ptr->Mcsr, auxptr->mptr->m);
+                }
+                else
+                {
+                    mxm(Mmodelview, auxptr->mptr->m, cam_ptr->Mcsr);
+                }
                 for (i = 0; i < auxptr->num_triangles; i++)
                 {
                     dibujar_triangulo(auxptr, i);
@@ -516,34 +524,69 @@ void read_from_file(char *fitx)
 
 void transformacion_principal(double m[16])
 {
+    // Modo analisis a la derecha, modo vuelo a la izquierda
     double resultado[16];
+    double aux[16] = {0.0};
+    double Mat[16] = {0.0};
+    int i;
+    int j;
     mlist *new_m = (mlist *)malloc(sizeof(mlist));
-    int i = 0;
-    if (camara == 1)
-    {
-        mxm(resultado, m, cam_ptr->mptr->m);
-        for (i = 0; i < 16; i++)
-        {
-            new_m->m[i] = resultado[i];
-        }
-        new_m->hptr = cam_ptr->mptr;
-        cam_ptr->mptr = new_m;
-        print_matrizea("Camera m", cam_ptr->mptr->m);
-        calcular_mcsr(cam_ptr);
-        return;
-    }
     if (ald_lokala == 1)
     {
-        mxm(resultado, sel_ptr->mptr->m, m);
+        if (camara == 1)
+        {
+            print_matrizea("Matrices a multiplicar: ", cam_ptr->mptr->m);
+            print_matrizea("Con por la izquierda", m);
+            mxm(new_m->m, cam_ptr->mptr->m, m);
+            print_matrizea("Resultado es:", new_m->m);
+            new_m->hptr = cam_ptr->mptr;
+            cam_ptr->mptr = new_m;
+            print_matrizea("Camera m", cam_ptr->mptr->m);
+            calcular_mcsr(cam_ptr);
+            return;
+        }
+        else
+        {
+            mxm(new_m->m, sel_ptr->mptr->m, m);
+        }
     }
     else
     {
-        mxm(resultado, m, sel_ptr->mptr->m);
-    }
-
-    for (i = 0; i < 16; i++)
-    {
-        new_m->m[i] = resultado[i];
+        if (camara == 1)
+        {
+            
+            for (i = 0; i < 4; i++)
+            {
+                for (j = 0; j < 4; j++)
+                {
+                    if (i == j)
+                    {
+                        Mat[i * 4 + j] = 1;
+                    }
+                    else
+                    {
+                        Mat[i * 4 + j] = 0;
+                    }
+                }
+            }
+            Mat[3] = -sel_ptr->mptr->m[3];
+            Mat[7] = -sel_ptr->mptr->m[7];
+            Mat[11] = -sel_ptr->mptr->m[11];
+            mxm(resultado, m, Mat);            
+            Mat[3] = -Mat[3];
+            Mat[7] = -Mat[7];
+            Mat[11] = -Mat[11];
+            mxm(new_m->m, Mat, resultado);
+            new_m->hptr = cam_ptr->mptr;
+            cam_ptr->mptr = new_m;
+            print_matrizea("Camera m", cam_ptr->mptr->m);
+            calcular_mcsr(cam_ptr);
+            return;
+        }
+        else
+        {
+            mxm(new_m->m, m, sel_ptr->mptr->m);
+        }
     }
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
@@ -672,6 +715,15 @@ void z_aldaketa(int dir)
 
 void undo()
 {
+    if (camara == 1)
+    {
+        if (cam_ptr->mptr->hptr != NULL)
+        {
+            cam_ptr->mptr = cam_ptr->mptr->hptr;
+        }
+        calcular_mcsr(cam_ptr);
+        return;
+    }
     if (sel_ptr->mptr->hptr != NULL)
     {
         sel_ptr->mptr = sel_ptr->mptr->hptr;
@@ -910,7 +962,7 @@ int main(int argc, char **argv)
         printf("Ez dago texturaren fitxategia (testura.ppm)\n");
         exit(-1);
     }
-    glClearColor(0.0f, 0.0f, 0.7f, 1.0f);
+    glClearColor(0.0, 0.0, 0.0, 0.0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
     denak = 1;
