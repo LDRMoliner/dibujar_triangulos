@@ -531,7 +531,7 @@ void read_from_file(char *fitx)
 void transformacion_principal(double m[16])
 {
     // Modo analisis a la derecha, modo vuelo a la izquierda
-    double resultado[16];
+    double resultado[16] = {0.0};
     double aux[16] = {0.0};
     double Mat[16] = {0.0};
     int i;
@@ -543,7 +543,20 @@ void transformacion_principal(double m[16])
         print_matrizea("Con por la izquierda", m);
         if (ald_lokala == 1)
         {
-            mxm(new_m->m, cam_ptr->mptr->m, m);
+            Mat[0] = 1;
+            Mat[5] = 1;
+            Mat[10] = 1;
+            Mat[15] = 1;
+            Mat[3] = -at[0];
+            Mat[7] = -at[1];
+            Mat[11] = -at[2];
+            print_matrizea("M-at", Mat);
+            mxm(resultado, m, Mat);
+            print_matrizea("M-at*M", resultado);
+            Mat[3] = -at[0];
+            Mat[7] = -at[1];
+            Mat[11] = -at[2];
+            mxm(new_m->m, Mat, m);
         }
         else
         {
