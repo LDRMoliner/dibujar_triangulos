@@ -190,58 +190,27 @@ void normalizar(double vector[3])
     }
 }
 
-void calcular_mcsr(my_camera *cam)
+void calcular_mcsr()
 {
     int i, j;
-    double X_cam[3] = {0.0};
-    double Y_cam[3] = {0.0};
-    double Z_cam[3] = {0.0};
-    double Pos_cam[3] = {0.0};
-    double Mcb[16] = {0.0};
-    double Mco[16] = {0.0};
-    double up[3] = {0.0, 1.0, 0.0};
 
-    // print_matrizea("Mcsr", cam->mptr->m);
+    for (i = 0; i < 16; i++)
+    {
+        cam_ptr->Mcsr[i] = 0.0;
+    }
 
-    Pos_cam[0] = cam->mptr->m[3];
-    Pos_cam[1] = cam->mptr->m[7];
-    Pos_cam[2] = cam->mptr->m[11];
-
-    Z_cam[0] = Pos_cam[0] - at[0];
-    Z_cam[1] = Pos_cam[1] - at[1];
-    Z_cam[2] = Pos_cam[2] - at[2];
-    normalizar(Z_cam);
-
-    X_cam[0] = up[1] * Z_cam[2] - up[2] * Z_cam[1];
-    X_cam[1] = -(up[0] * Z_cam[2] - up[2] * Z_cam[0]);
-    X_cam[2] = up[0] * Z_cam[1] - up[1] * Z_cam[0];
-
-    // printf("Vector X_cam: %f, %f, %f\n", X_cam[0], X_cam[1], X_cam[2]);
-    // printf("Vector Z_cam: %f, %f, %f\n", Z_cam[0], Z_cam[1], Z_cam[2]);
-
-    normalizar(X_cam);
-
-    Y_cam[0] = Z_cam[1] * X_cam[2] - Z_cam[2] * X_cam[1];
-    Y_cam[1] = -(Z_cam[0] * X_cam[2] - Z_cam[2] * X_cam[0]);
-    Y_cam[2] = Z_cam[0] * X_cam[1] - Z_cam[1] * X_cam[0];
-    // printf("Vector Y_cam: %f, %f, %f\n", Y_cam[0], Y_cam[1], Y_cam[2]);
-
-    memcpy(Mcb, X_cam, 3 * sizeof(double));
-    memcpy(Mcb + 4, Y_cam, 3 * sizeof(double));
-    memcpy(Mcb + 8, Z_cam, 3 * sizeof(double));
-    Mcb[15] = 1.0;
-    // print_matrizea("Mcb", Mcb);
-    // print_matrizea("Mco", Mco);
-
-    memcpy(Mco, cam->mptr->m, 16 * sizeof(double));
-    Mco[3] *= -1;
-    Mco[7] *= -1;
-    Mco[11] *= -1;
-    // print_matrizea("Mcb", Mcb);
-    // print_matrizea("Mco", Mco);
-
-    mxm(cam->Mcsr, Mcb, Mco);
-    // print_matrizea("Mcsr", cam->Mcsr);
+    cam_ptr->Mcsr[3] = -(cam_ptr->mptr->m[3] * cam_ptr->mptr->m[0] + cam_ptr->mptr->m[7] * cam_ptr->mptr->m[4] + cam_ptr->mptr->m[11] * cam_ptr->mptr->m[8]);
+    cam_ptr->Mcsr[7] = -(cam_ptr->mptr->m[3] * cam_ptr->mptr->m[0] + cam_ptr->mptr->m[7] * cam_ptr->mptr->m[4] + cam_ptr->mptr->m[11] * cam_ptr->mptr->m[8]);
+    cam_ptr->Mcsr[11] = -(cam_ptr->mptr->m[3] * cam_ptr->mptr->m[0] + cam_ptr->mptr->m[7] * cam_ptr->mptr->m[4] + cam_ptr->mptr->m[11] * cam_ptr->mptr->m[8]);
+    // Poner los valores de Mc de fila en columna en Mcsr y la ultima fila de la Mcsr 0,0,0,1
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < 3; j++)
+        {
+            cam_ptr->Mcsr[i * 4 + j] = cam_ptr->mptr->m[j * 4 + i];
+        }
+    }
+    cam_ptr->Mcsr[15] = 1.0;
 }
 
 // TODO
@@ -571,7 +540,7 @@ void transformacion_principal(double m[16])
     {
         if (camara == 1)
         {
-            mxm(new_m->m, cam_ptr->mptr->m, m);
+            mxm(new_m->m, m, cam_ptr->mptr->m);
             new_m->hptr = cam_ptr->mptr;
             cam_ptr->mptr = new_m;
             calcular_mcsr(cam_ptr);
@@ -1033,11 +1002,75 @@ void perspectiva()
     printf("Perspectiva:\n");
 }
 
-void inicializar_camara()
+void establecer_camara(double at[3])
 {
     int i, j;
+    double Z_cam[3];
+    double Pos_cam[3];
+    double X_cam[3];
+    double Y_cam[3];
+    double up[3] = {0.0, 1.0, 0.0};
+
     cam_ptr = (my_camera *)malloc(sizeof(my_camera));
     cam_ptr->mptr = (mlist *)malloc(sizeof(mlist));
+
+    for (i = 0, j = 0; i < 16; i++)
+    {
+        cam_ptr->mptr->m[i] = 0;
+        if (j < 3)
+        {
+            Z_cam[j] = 0;
+            Pos_cam[j] = 0;
+            X_cam[j] = 0;
+            Y_cam[j] = 0;
+        }
+    }
+
+    cam_ptr->mptr->m[15] = 1;
+
+    // Empezamos por decidir la posición de la cámara.
+
+    cam_ptr->mptr->m[3] = 0;
+    cam_ptr->mptr->m[7] = 0;
+    cam_ptr->mptr->m[11] = 200; // Para poder verlo todo desde la distancia.
+
+    // Calculamos la columna z de la matriz de la cámara.
+
+    Z_cam[0] = cam_ptr->mptr->m[3] - at[0];
+    Z_cam[1] = cam_ptr->mptr->m[7] - at[1];
+    Z_cam[2] = cam_ptr->mptr->m[11] - at[2];
+
+    normalizar(Z_cam);
+
+    cam_ptr->mptr->m[2] = Z_cam[0];
+    cam_ptr->mptr->m[6] = Z_cam[1];
+    cam_ptr->mptr->m[10] = Z_cam[2];
+
+    // Calculamos la columna x de la matriz de la cámara.
+
+    X_cam[0] = up[1] * Z_cam[2] - up[2] * Z_cam[1];
+    X_cam[1] = -(up[0] * Z_cam[2] - up[2] * Z_cam[0]);
+    X_cam[2] = up[0] * Z_cam[1] - up[1] * Z_cam[0];
+
+    normalizar(X_cam);
+
+    cam_ptr->mptr->m[0] = X_cam[0];
+    cam_ptr->mptr->m[4] = X_cam[1];
+    cam_ptr->mptr->m[8] = X_cam[2];
+
+    // Calculamos la columna y de la matriz de la cámara.
+
+    Y_cam[0] = Z_cam[1] * X_cam[2] - Z_cam[2] * X_cam[1];
+    Y_cam[1] = -(Z_cam[0] * X_cam[2] - Z_cam[2] * X_cam[0]);
+    Y_cam[2] = Z_cam[0] * X_cam[1] - Z_cam[1] * X_cam[0];
+
+    cam_ptr->mptr->m[1] = Y_cam[0];
+    cam_ptr->mptr->m[5] = Y_cam[1];
+    cam_ptr->mptr->m[9] = Y_cam[2];
+
+    // Mco[3] *= -1;
+    // Mco[7] *= -1;
+    // Mco[11] *= -1;
     for (i = 0; i < 4; i++)
     {
         for (j = 0; j < 4; j++)
@@ -1054,14 +1087,14 @@ void inicializar_camara()
             }
         }
     }
-    cam_ptr->mptr->m[11] = 100;
+    cam_ptr->mptr->m[11] = 200;
     calcular_mcsr(cam_ptr);
 }
 
 int main(int argc, char **argv)
 {
     int retval;
-
+    double at[3] = {0.0, 0.0, 0.0};
     printf(" Triangeluak: barneko puntuak eta testura\n Triángulos con puntos internos y textura \n");
     printf("Press <ESC> to finish\n");
     glutInit(&argc, argv);
@@ -1092,11 +1125,11 @@ int main(int argc, char **argv)
     ald_lokala = 1;
     perspectiva();
     printf("Preparando la camara...\n");
-    inicializar_camara();
+    establecer_camara(at);
     print_matrizea("Camara estado inicial:", cam_ptr->mptr->m);
     read_from_file("k.txt");
     sel_ptr->mptr->m[3] = -200;
-    //  sel_ptr->mptr->m[11] = 200;
+    sel_ptr->mptr->m[11] = 200;
     if (argc > 1)
     {
         read_from_file(argv[1]);
@@ -1107,7 +1140,7 @@ int main(int argc, char **argv)
     }
 
     sel_ptr->mptr->m[3] = 200;
-    //    sel_ptr->mptr->m[11] = 200;
+    sel_ptr->mptr->m[11] = 200;
     glutMainLoop();
     return 0;
 }
