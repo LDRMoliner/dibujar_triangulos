@@ -38,6 +38,7 @@ typedef struct my_camera
 
 extern int load_ppm(char *file, unsigned char **bufferptr, int *dimxptr, int *dimyptr);
 void print_matrizea(char *str, double to_print[16]);
+void establecer_camara(double atx, double aty, double atz);
 unsigned char *bufferra;
 int dimx, dimy;
 int indexx;
@@ -527,7 +528,7 @@ void transformacion_principal(double m[16])
     int i;
     int j;
 
-    print_matrizea("Me ha llegado esta bazofia.", m);
+    print_matrizea("Me ha llegado esta bazofia:", m);
     for (i = 0; i < 16; i++)
     {
         Mat[i] = 0;
@@ -540,10 +541,10 @@ void transformacion_principal(double m[16])
     {
         if (camara == 1)
         {
-            mxm(new_m->m, m, cam_ptr->mptr->m);
+            mxm(new_m->m, cam_ptr->mptr->m, m);
             new_m->hptr = cam_ptr->mptr;
             cam_ptr->mptr = new_m;
-            calcular_mcsr(cam_ptr);
+            calcular_mcsr();
             return;
         }
         // print_matrizea("Objeto a multiplicar por la izquierda", sel_ptr->mptr->m);
@@ -554,10 +555,10 @@ void transformacion_principal(double m[16])
     {
         if (camara == 1)
         {
-            mxm(new_m->m, cam_ptr->mptr->m, m);
+            mxm(new_m->m, m, cam_ptr->mptr->m);
             new_m->hptr = cam_ptr->mptr;
             cam_ptr->mptr = new_m;
-            calcular_mcsr(cam_ptr);
+            calcular_mcsr();
             return;
         }
         mxm(new_m->m, m, sel_ptr->mptr->m);
@@ -702,7 +703,7 @@ void y_aldaketa(int dir)
         m[2] = sin(angulo);
         m[8] = -sin(angulo);
         m[10] = cos(angulo);
-        print_matrizea("Aldaketa y de borja", m);
+        // print_matrizea("Aldaketa y de borja", m);
     }
     transformacion_principal(m);
 }
@@ -876,9 +877,15 @@ static void teklatua(unsigned char key, int x, int y)
         break;
     case 'g':
         if (ald_lokala == 1)
+        {
             ald_lokala = 0;
+            establecer_camara(sel_ptr->mptr->m[3], sel_ptr->mptr->m[7], sel_ptr->mptr->m[11]);
+            calcular_mcsr();
+        }
         else
+        {
             ald_lokala = 1;
+        }
         break;
     case 's':
         s_aldaketa(0);
@@ -1002,7 +1009,7 @@ void perspectiva()
     printf("Perspectiva:\n");
 }
 
-void establecer_camara(double at[3])
+void establecer_camara(double atx, double aty, double atz)
 {
     int i, j;
     double Z_cam[3];
@@ -1032,13 +1039,13 @@ void establecer_camara(double at[3])
 
     cam_ptr->mptr->m[3] = 0;
     cam_ptr->mptr->m[7] = 0;
-    cam_ptr->mptr->m[11] = 200; // Para poder verlo todo desde la distancia.
+    cam_ptr->mptr->m[11] = -200; // Para poder verlo todo desde la distancia.
 
     // Calculamos la columna z de la matriz de la cámara.
 
-    Z_cam[0] = cam_ptr->mptr->m[3] - at[0];
-    Z_cam[1] = cam_ptr->mptr->m[7] - at[1];
-    Z_cam[2] = cam_ptr->mptr->m[11] - at[2];
+    Z_cam[0] = cam_ptr->mptr->m[3] - atx;
+    Z_cam[1] = cam_ptr->mptr->m[7] - aty;
+    Z_cam[2] = cam_ptr->mptr->m[11] - atz;
 
     normalizar(Z_cam);
 
@@ -1125,7 +1132,8 @@ int main(int argc, char **argv)
     ald_lokala = 1;
     perspectiva();
     printf("Preparando la camara...\n");
-    establecer_camara(at);
+    establecer_camara(0, 0, 0);
+    calcular_mcsr();
     print_matrizea("Camara estado inicial:", cam_ptr->mptr->m);
     read_from_file("k.txt");
     sel_ptr->mptr->m[3] = -200;
