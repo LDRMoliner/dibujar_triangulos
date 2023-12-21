@@ -83,6 +83,7 @@ void obtener_rotacion_rodrigues(double x, double y, double z, double angulo, dou
     m[9] = (1 - cos(angulo)) * y * z + sin(angulo) * x;
     m[10] = cos(angulo) + (1 - cos(angulo)) * z * z;
 
+    m[15] = 1.0;
     print_matrizea("rotacion rodrigues", m);
 }
 void mxm(double resultado[16], double operando_izquierdo[16], double operando_derecho[16])
