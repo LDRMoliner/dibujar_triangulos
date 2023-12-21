@@ -457,14 +457,8 @@ static void marraztu(void)
 
             for (auxptr = foptr; auxptr != 0; auxptr = auxptr->hptr)
             {
-                if (ald_lokala == 1)
-                {
-                    mxm(Mmodelview, cam_ptr->Mcsr, auxptr->mptr->m);
-                }
-                else
-                {
-                    mxm(Mmodelview, auxptr->mptr->m, cam_ptr->Mcsr);
-                }
+                mxm(Mmodelview, cam_ptr->Mcsr, auxptr->mptr->m);
+
                 for (i = 0; i < auxptr->num_triangles; i++)
                 {
                     dibujar_triangulo(auxptr, i);
@@ -539,29 +533,8 @@ void transformacion_principal(double m[16])
     mlist *new_m = (mlist *)malloc(sizeof(mlist));
     if (camara == 1)
     {
-        print_matrizea("Matrices a multiplicar: ", cam_ptr->mptr->m);
-        print_matrizea("Con por la izquierda", m);
-        if (ald_lokala == 1)
-        {
-            Mat[0] = 1;
-            Mat[5] = 1;
-            Mat[10] = 1;
-            Mat[15] = 1;
-            Mat[3] = -at[0];
-            Mat[7] = -at[1];
-            Mat[11] = -at[2];
-            print_matrizea("M-at", Mat);
-            mxm(resultado, m, Mat);
-            print_matrizea("M-at*M", resultado);
-            Mat[3] = -at[0];
-            Mat[7] = -at[1];
-            Mat[11] = -at[2];
-            mxm(new_m->m, Mat, m);
-        }
-        else
-        {
-            mxm(new_m->m, m, cam_ptr->mptr->m);
-        }
+        mxm(new_m->m, m, cam_ptr->mptr->m);
+
         print_matrizea("Resultado es:", new_m->m);
         new_m->hptr = cam_ptr->mptr;
         cam_ptr->mptr = new_m;
