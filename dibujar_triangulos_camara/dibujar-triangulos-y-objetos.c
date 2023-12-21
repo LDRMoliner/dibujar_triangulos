@@ -37,6 +37,7 @@ typedef struct my_camera
 // información de textura
 
 extern int load_ppm(char *file, unsigned char **bufferptr, int *dimxptr, int *dimyptr);
+void print_matrizea(char *str, double to_print[16]);
 unsigned char *bufferra;
 int dimx, dimy;
 int indexx;
@@ -63,6 +64,26 @@ double Mmodelview[16] = {0.0};
 
 char fitxiz[100];
 
+void obtener_rotacion_rodrigues(double x, double y, double z, double angulo, double m[16])
+{
+    // Matriz de rotación rodrigues
+
+    m[0] = cos(angulo) + (1 - cos(angulo)) * x * x;
+    m[1] = (1 - cos(angulo)) * x * y - sin(angulo) * z;
+    m[2] = (1 - cos(angulo)) * x * z + sin(angulo) * y;
+
+    // Segunda fila
+    m[4] = (1 - cos(angulo)) * x * y + sin(angulo) * z;
+    m[5] = cos(angulo) + (1 - cos(angulo)) * y * y;
+    m[6] = (1 - cos(angulo)) * y * z - sin(angulo) * x;
+
+    // Tercera fila
+    m[8] = (1 - cos(angulo)) * x * z - sin(angulo) * y;
+    m[9] = (1 - cos(angulo)) * y * z + sin(angulo) * x;
+    m[10] = cos(angulo) + (1 - cos(angulo)) * z * z;
+
+    print_matrizea("rotacion rodrigues", m);
+}
 void mxm(double resultado[16], double operando_izquierdo[16], double operando_derecho[16])
 {
     int i, j, k;
@@ -149,7 +170,6 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
 void print_matrizea(char *str, double to_print[16])
 {
     int i;
-
     printf("%s\n", str);
     for (i = 0; i < 4; i++)
         printf("%lf, %lf, %lf, %lf\n", to_print[i * 4], to_print[i * 4 + 1], to_print[i * 4 + 2],
@@ -505,12 +525,12 @@ void read_from_file(char *fitx)
     }
     else
     {
-        for (i = 0; i < optr->num_triangles; i++)
-        {
-            printf("p1: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p1.x, optr->triptr[i].p1.y, optr->triptr[i].p1.z, optr->triptr[i].p1.u, optr->triptr[i].p1.v, optr->triptr[i].p1.w);
-            printf("p2: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p2.x, optr->triptr[i].p2.y, optr->triptr[i].p2.z, optr->triptr[i].p2.u, optr->triptr[i].p2.v, optr->triptr[i].p2.w);
-            printf("p3: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p3.x, optr->triptr[i].p3.y, optr->triptr[i].p3.z, optr->triptr[i].p3.u, optr->triptr[i].p3.v, optr->triptr[i].p3.w);
-        }
+        // for (i = 0; i < optr->num_triangles; i++)
+        // {
+        //     printf("p1: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p1.x, optr->triptr[i].p1.y, optr->triptr[i].p1.z, optr->triptr[i].p1.u, optr->triptr[i].p1.v, optr->triptr[i].p1.w);
+        //     printf("p2: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p2.x, optr->triptr[i].p2.y, optr->triptr[i].p2.z, optr->triptr[i].p2.u, optr->triptr[i].p2.v, optr->triptr[i].p2.w);
+        //     printf("p3: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p3.x, optr->triptr[i].p3.y, optr->triptr[i].p3.z, optr->triptr[i].p3.u, optr->triptr[i].p3.v, optr->triptr[i].p3.w);
+        // }
         // printf("objektuaren matrizea...\n");
         optr->mptr = (mlist *)malloc(sizeof(mlist));
 
@@ -532,64 +552,47 @@ void read_from_file(char *fitx)
 void transformacion_principal(double m[16])
 {
     // Modo analisis a la derecha, modo vuelo a la izquierda
-    double resultado[16] = {0.0};
-    double aux[16] = {0.0};
-    double Mat[16] = {0.0};
+    double resultado[16];
+    double aux[16];
+    double Mat[16];
     int i;
     int j;
-    mlist *new_m = (mlist *)malloc(sizeof(mlist));
-    if (camara == 1)
+
+    print_matrizea("Me ha llegado esta bazofia.", m);
+    for (i = 0; i < 16; i++)
     {
-        print_matrizea("m", m);
-        if (ald_lokala == 0)
-        {
-            Mat[0] = 1;
-            Mat[5] = 1;
-            Mat[10] = 1;
-            Mat[15] = 1;
-            Mat[3] = -sel_ptr->mptr->m[3];
-            Mat[7] = -sel_ptr->mptr->m[7];
-            Mat[11] = -sel_ptr->mptr->m[11];
-            mxm(resultado, m, Mat);
-            Mat[3] = -Mat[3];
-            Mat[7] = -Mat[7];
-            Mat[11] = -Mat[11];
-            mxm(m, Mat, resultado);
-            mxm(new_m->m, cam_ptr->mptr->m, m);
-        }
-        else
-        {
-            Mat[0] = 1;
-            Mat[5] = 1;
-            Mat[10] = 1;
-            Mat[15] = 1;
-            Mat[3] = -cam_ptr->mptr->m[3];
-            Mat[7] = -cam_ptr->mptr->m[7];
-            Mat[11] = -cam_ptr->mptr->m[11];
-            mxm(resultado, m, Mat);
-            Mat[3] = -Mat[3];
-            Mat[7] = -Mat[7];
-            Mat[11] = -Mat[11];
-            mxm(m, Mat, resultado);
-            mxm(new_m->m, cam_ptr->mptr->m, m);
-        }
-        calcular_mcsr(cam_ptr);
-        print_matrizea("Resultado es:", new_m->m);
-        // getchar();
-        new_m->hptr = cam_ptr->mptr;
-        cam_ptr->mptr = new_m;
-        print_matrizea("Camera m", cam_ptr->mptr->m);
-        return;
+        Mat[i] = 0;
+        resultado[i] = 0;
+        aux[i] = 0;
     }
+    mlist *new_m = (mlist *)malloc(sizeof(mlist));
+    // printf("aldaera lokala: %d\n", ald_lokala);
     if (ald_lokala == 1)
     {
+        if (camara == 1)
+        {
+            mxm(new_m->m, cam_ptr->mptr->m, m);
+            new_m->hptr = cam_ptr->mptr;
+            cam_ptr->mptr = new_m;
+            calcular_mcsr(cam_ptr);
+            return;
+        }
+        // print_matrizea("Objeto a multiplicar por la izquierda", sel_ptr->mptr->m);
         mxm(new_m->m, sel_ptr->mptr->m, m);
+        // print_matrizea("Objeto a multiplicar por la derecha", m);
     }
     else
     {
+        if (camara == 1)
+        {
+            mxm(new_m->m, cam_ptr->mptr->m, m);
+            new_m->hptr = cam_ptr->mptr;
+            cam_ptr->mptr = new_m;
+            calcular_mcsr(cam_ptr);
+            return;
+        }
         mxm(new_m->m, m, sel_ptr->mptr->m);
     }
-
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
 }
@@ -600,6 +603,8 @@ void x_aldaketa(int dir)
      * y llamamos a la función transformación principal.
      */
     double m[16];
+    double Mat[16];
+    double aux[16];
     int exponent = 0;
     int i = 0;
     double angulo = 0;
@@ -610,45 +615,47 @@ void x_aldaketa(int dir)
     for (i = 0; i < 16; i++)
     {
         m[i] = 0;
+        Mat[i] = 0;
+        aux[i] = 0;
     }
 
     m[0] = 1;
+    m[5] = 1;
+    m[10] = 1;
     m[15] = 1;
 
     angulo = 0.075 * dir;
 
     if (aldaketa == 't')
     {
-        m[10] = 1;
-        m[5] = 1;
-        m[3] = pow(-1, !dir) * 5;
+        m[3] = dir * 5;
+        print_matrizea("Traslacion: ", m);
         transformacion_principal(m);
         return;
     }
 
-    if (camara == 1)
+    if (camara == 1 & ald_lokala == 0)
     {
         x = cam_ptr->mptr->m[0];
         y = cam_ptr->mptr->m[4];
         z = cam_ptr->mptr->m[8];
 
-        // Primera fila
-        m[0] = cos(angulo) + (1 - cos(angulo)) * x * x;
-        m[1] = (1 - cos(angulo)) * x * y - sin(angulo) * z;
-        m[2] = (1 - cos(angulo)) * x * z + sin(angulo) * y;
+        Mat[0] = 1;
+        Mat[5] = 1;
+        Mat[10] = 1;
+        Mat[15] = 1;
 
-        // Segunda fila
-        m[4] = (1 - cos(angulo)) * x * y + sin(angulo) * z;
-        m[5] = cos(angulo) + (1 - cos(angulo)) * y * y;
-        m[6] = (1 - cos(angulo)) * y * z - sin(angulo) * x;
-
-        // Tercera fila
-        m[8] = (1 - cos(angulo)) * x * z - sin(angulo) * y;
-        m[9] = (1 - cos(angulo)) * y * z + sin(angulo) * x;
-        m[10] = cos(angulo) + (1 - cos(angulo)) * z * z;
-
-        print_matrizea("rotacion rodrigues", m);
-        // getchar();
+        Mat[3] = -sel_ptr->mptr->m[3];
+        Mat[7] = -sel_ptr->mptr->m[7];
+        Mat[11] = -sel_ptr->mptr->m[11];
+        obtener_rotacion_rodrigues(x, y, z, angulo, m);
+        mxm(aux, m, Mat);
+        Mat[3] = -Mat[3];
+        Mat[7] = -Mat[7];
+        Mat[11] = -Mat[11];
+        mxm(m, Mat, aux);
+        transformacion_principal(m);
+        return;
     }
     else
     {
@@ -664,6 +671,8 @@ void x_aldaketa(int dir)
 void y_aldaketa(int dir)
 {
     double m[16];
+    double aux[16];
+    double Mat[16];
     int exponent = 0;
     int i = 0;
     double x = 0;
@@ -674,15 +683,17 @@ void y_aldaketa(int dir)
     for (i = 0; i < 16; i++)
     {
         m[i] = 0;
+        aux[i] = 0;
+        Mat[i] = 0;
     }
 
+    m[0] = 1;
     m[5] = 1;
+    m[10] = 1;
     m[15] = 1;
 
     if (aldaketa == 't')
     {
-        m[10] = 1;
-        m[0] = 1;
         m[7] = dir * 5;
         transformacion_principal(m);
         return;
@@ -690,40 +701,106 @@ void y_aldaketa(int dir)
 
     angulo = dir * 0.075;
 
-    if (camara == 1)
+    if (camara == 1 & ald_lokala == 0)
     {
+
+        // getchar();
+
         x = cam_ptr->mptr->m[1];
         y = cam_ptr->mptr->m[5];
         z = cam_ptr->mptr->m[9];
 
-        // Primera fila
-        m[0] = cos(angulo) + (1 - cos(angulo)) * x * x;
-        m[1] = (1 - cos(angulo)) * x * y - sin(angulo) * z;
-        m[2] = (1 - cos(angulo)) * x * z + sin(angulo) * y;
+        Mat[0] = 1;
+        Mat[5] = 1;
+        Mat[10] = 1;
+        Mat[15] = 1;
 
-        // Segunda fila
-        m[4] = (1 - cos(angulo)) * x * y + sin(angulo) * z;
-        m[5] = cos(angulo) + (1 - cos(angulo)) * y * y;
-        m[6] = (1 - cos(angulo)) * y * z - sin(angulo) * x;
-
-        // Tercera fila
-        m[8] = (1 - cos(angulo)) * x * z - sin(angulo) * y;
-        m[9] = (1 - cos(angulo)) * y * z + sin(angulo) * x;
-        m[10] = cos(angulo) + (1 - cos(angulo)) * z * z;
-
+        Mat[3] = -sel_ptr->mptr->m[3];
+        Mat[7] = -sel_ptr->mptr->m[7];
+        Mat[11] = -sel_ptr->mptr->m[11];
+        obtener_rotacion_rodrigues(x, y, z, angulo, m);
         print_matrizea("rotacion rodrigues", m);
-        // getchar();
+        mxm(aux, m, Mat);
+        Mat[3] = -Mat[3];
+        Mat[7] = -Mat[7];
+        Mat[11] = -Mat[11];
+        mxm(m, Mat, aux);
+        print_matrizea("rotacion final en modo analisi", m);
     }
-
     else
     {
-        m[0] = cos(exponent * 0.075);
-        m[2] = sin(exponent * 0.075);
-        m[8] = -sin(exponent * 0.075);
-        m[10] = cos(exponent * 0.075);
+        m[0] = cos(angulo);
+        m[2] = sin(angulo);
+        m[8] = -sin(angulo);
+        m[10] = cos(angulo);
+        print_matrizea("Aldaketa y de borja", m);
     }
     transformacion_principal(m);
 }
+void z_aldaketa(int dir)
+{
+
+    double m[16];
+    double Mat[16];
+    double aux[16];
+    int exponent = 0;
+    int i = 0;
+    double angulo;
+    double x, y, z;
+    for (i = 0; i < 16; i++)
+    {
+        m[i] = 0;
+    }
+
+    m[0] = 1;
+    m[5] = 1;
+    m[10] = 1;
+    m[15] = 1;
+
+    if (aldaketa == 't')
+    {
+        m[11] = dir * 5;
+        transformacion_principal(m);
+        return;
+    }
+
+    angulo = dir * 0.075;
+    if (camara == 1 & ald_lokala == 0)
+    {
+        x = cam_ptr->mptr->m[2];
+        y = cam_ptr->mptr->m[6];
+        z = cam_ptr->mptr->m[10];
+
+        Mat[0] = 1;
+        Mat[5] = 1;
+        Mat[10] = 1;
+        Mat[15] = 1;
+
+        Mat[3] = -sel_ptr->mptr->m[3];
+        Mat[7] = -sel_ptr->mptr->m[7];
+        Mat[11] = -sel_ptr->mptr->m[11];
+        obtener_rotacion_rodrigues(x, y, z, angulo, m);
+
+        mxm(aux, m, Mat);
+        Mat[3] = -Mat[3];
+        Mat[7] = -Mat[7];
+        Mat[11] = -Mat[11];
+        mxm(m, Mat, aux);
+        print_matrizea("rotacion final en modo analisi", m);
+
+        obtener_rotacion_rodrigues(x, y, z, angulo, m);
+    }
+    else
+    {
+        m[0] = cos(angulo);
+        m[1] = -sin(angulo);
+        m[4] = sin(angulo);
+        m[5] = cos(angulo);
+    }
+    print_matrizea("Aldaketa", m);
+    transformacion_principal(m);
+}
+
 void s_aldaketa(int dir)
 {
     double m[16];
@@ -748,69 +825,6 @@ void s_aldaketa(int dir)
     m[5] = 1.05;
     m[10] = 1.05;
     m[15] = 1;
-    transformacion_principal(m);
-}
-
-void z_aldaketa(int dir)
-{
-
-    double m[16];
-    int exponent = 0;
-    int i = 0;
-    double angulo;
-    double x,y,z;
-    for (i = 0; i < 16; i++)
-    {
-        m[i] = 0;
-    }
-
-    m[0] = 1;
-    m[15] = 1;
-    ;
-
-    if (aldaketa == 't')
-    {
-        m[10] = 1;
-        m[0] = 1;
-        m[7] = dir * 5;
-        transformacion_principal(m);
-        return;
-    }
-
-    angulo = dir * 0.075;
-    if (camara == 1)
-    {
-        x = cam_ptr->mptr->m[2];
-        y = cam_ptr->mptr->m[6];
-        z = cam_ptr->mptr->m[10];
-
-        // Primera fila
-        m[0] = cos(angulo) + (1 - cos(angulo)) * x * x;
-        m[1] = (1 - cos(angulo)) * x * y - sin(angulo) * z;
-        m[2] = (1 - cos(angulo)) * x * z + sin(angulo) * y;
-
-        // Segunda fila
-        m[4] = (1 - cos(angulo)) * x * y + sin(angulo) * z;
-        m[5] = cos(angulo) + (1 - cos(angulo)) * y * y;
-        m[6] = (1 - cos(angulo)) * y * z - sin(angulo) * x;
-
-        // Tercera fila
-        m[8] = (1 - cos(angulo)) * x * z - sin(angulo) * y;
-        m[9] = (1 - cos(angulo)) * y * z + sin(angulo) * x;
-        m[10] = cos(angulo) + (1 - cos(angulo)) * z * z;
-
-        print_matrizea("rotacion rodrigues", m);
-        // getchar();
-    }
-
-    else
-    {
-        m[0] = cos(exponent * 0.075);
-        m[2] = sin(exponent * 0.075);
-        m[8] = -sin(exponent * 0.075);
-        m[10] = cos(exponent * 0.075);
-    }
-    print_matrizea("Aldaketa", m);
     transformacion_principal(m);
 }
 
@@ -894,7 +908,8 @@ static void teklatua(unsigned char key, int x, int y)
     case 'g':
         if (ald_lokala == 1)
             ald_lokala = 0;
-        ald_lokala = 1;
+        else
+            ald_lokala = 1;
         break;
     case 's':
         s_aldaketa(0);
@@ -1039,7 +1054,7 @@ void inicializar_camara()
             }
         }
     }
-    cam_ptr->mptr->m[11] = 200;
+    cam_ptr->mptr->m[11] = 100;
     calcular_mcsr(cam_ptr);
 }
 
@@ -1078,6 +1093,7 @@ int main(int argc, char **argv)
     perspectiva();
     printf("Preparando la camara...\n");
     inicializar_camara();
+    print_matrizea("Camara estado inicial:", cam_ptr->mptr->m);
     read_from_file("k.txt");
     sel_ptr->mptr->m[3] = -200;
     //  sel_ptr->mptr->m[11] = 200;
