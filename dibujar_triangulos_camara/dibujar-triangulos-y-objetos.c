@@ -192,6 +192,8 @@ void normalizar(double vector[3])
     }
 }
 
+// A partir de la matriz de la cánara, se calcula la nueva Mcsr. Hay que llamar a esta función cada vez que se realice una transformación en la cámara.
+
 void calcular_mcsr()
 {
     int i, j;
@@ -202,8 +204,8 @@ void calcular_mcsr()
     }
 
     cam_ptr->Mcsr[3] = -(cam_ptr->mptr->m[3] * cam_ptr->mptr->m[0] + cam_ptr->mptr->m[7] * cam_ptr->mptr->m[4] + cam_ptr->mptr->m[11] * cam_ptr->mptr->m[8]);
-    cam_ptr->Mcsr[7] = -(cam_ptr->mptr->m[3] * cam_ptr->mptr->m[0] + cam_ptr->mptr->m[7] * cam_ptr->mptr->m[4] + cam_ptr->mptr->m[11] * cam_ptr->mptr->m[8]);
-    cam_ptr->Mcsr[11] = -(cam_ptr->mptr->m[3] * cam_ptr->mptr->m[0] + cam_ptr->mptr->m[7] * cam_ptr->mptr->m[4] + cam_ptr->mptr->m[11] * cam_ptr->mptr->m[8]);
+    cam_ptr->Mcsr[7] = -(cam_ptr->mptr->m[3] * cam_ptr->mptr->m[1] + cam_ptr->mptr->m[7] * cam_ptr->mptr->m[5] + cam_ptr->mptr->m[11] * cam_ptr->mptr->m[9]);
+    cam_ptr->Mcsr[11] = -(cam_ptr->mptr->m[3] * cam_ptr->mptr->m[2] + cam_ptr->mptr->m[7] * cam_ptr->mptr->m[6] + cam_ptr->mptr->m[11] * cam_ptr->mptr->m[10]);
     // Poner los valores de Mc de fila en columna en Mcsr y la ultima fila de la Mcsr 0,0,0,1
     for (i = 0; i < 3; i++)
     {
@@ -545,7 +547,9 @@ void transformacion_principal(double m[16])
             mxm(new_m->m, cam_ptr->mptr->m, m);
             new_m->hptr = cam_ptr->mptr;
             cam_ptr->mptr = new_m;
+            print_matrizea("Matriz de la camara:", cam_ptr->mptr->m);
             calcular_mcsr();
+            print_matrizea("Mcsr:", cam_ptr->Mcsr);
             return;
         }
         // print_matrizea("Objeto a multiplicar por la izquierda", sel_ptr->mptr->m);
@@ -625,8 +629,8 @@ void x_aldaketa(int dir)
         Mat[7] = -Mat[7];
         Mat[11] = -Mat[11];
         mxm(m, Mat, aux);
-        transformacion_principal(m);
-        return;
+        // transformacion_principal(m);
+        // return;
     }
     else
     {
@@ -681,11 +685,6 @@ void y_aldaketa(int dir)
         y = cam_ptr->mptr->m[5];
         z = cam_ptr->mptr->m[9];
 
-        Mat[0] = 1;
-        Mat[5] = 1;
-        Mat[10] = 1;
-        Mat[15] = 1;
-
         Mat[3] = -sel_ptr->mptr->m[3];
         Mat[7] = -sel_ptr->mptr->m[7];
         Mat[11] = -sel_ptr->mptr->m[11];
@@ -704,7 +703,6 @@ void y_aldaketa(int dir)
         m[2] = sin(angulo);
         m[8] = -sin(angulo);
         m[10] = cos(angulo);
-        // print_matrizea("Aldaketa y de borja", m);
     }
     transformacion_principal(m);
 }
@@ -881,7 +879,9 @@ static void teklatua(unsigned char key, int x, int y)
         {
             ald_lokala = 0;
             establecer_camara(sel_ptr->mptr->m[3], sel_ptr->mptr->m[7], sel_ptr->mptr->m[11]);
+            print_matrizea("Matriz de la camara mirando hacia el objeto seleccionado:", cam_ptr->mptr->m);
             calcular_mcsr();
+            print_matrizea("Mcsr: ", cam_ptr->Mcsr)
         }
         else
         {
