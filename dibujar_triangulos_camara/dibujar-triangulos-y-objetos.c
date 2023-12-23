@@ -544,12 +544,12 @@ void transformacion_principal(double m[16])
     {
         if (camara == 1)
         {
-            mxm(new_m->m, cam_ptr->mptr->m, m);
+            mxm(new_m->m, m, cam_ptr->mptr->m);
             new_m->hptr = cam_ptr->mptr;
             cam_ptr->mptr = new_m;
             print_matrizea("Matriz de la camara:", cam_ptr->mptr->m);
             calcular_mcsr();
-            print_matrizea("Mcsr:", cam_ptr->Mcsr);
+            // print_matrizea("Mcsr:", cam_ptr->Mcsr);
             return;
         }
         // print_matrizea("Objeto a multiplicar por la izquierda", sel_ptr->mptr->m);
@@ -666,6 +666,10 @@ void y_aldaketa(int dir)
     m[5] = 1;
     m[10] = 1;
     m[15] = 1;
+    Mat[0] = 1;
+    Mat[5] = 1;
+    Mat[10] = 1;
+    Mat[15] = 1;
 
     if (aldaketa == 't')
     {
@@ -690,12 +694,15 @@ void y_aldaketa(int dir)
         Mat[11] = -sel_ptr->mptr->m[11];
         obtener_rotacion_rodrigues(x, y, z, angulo, m);
         print_matrizea("rotacion rodrigues", m);
+        print_matrizea("M-at", Mat);
         mxm(aux, m, Mat);
-        Mat[3] = -Mat[3];
-        Mat[7] = -Mat[7];
-        Mat[11] = -Mat[11];
+        print_matrizea("rotacion rodrigues", m);
+        Mat[3] = sel_ptr->mptr->m[3];
+        Mat[7] = sel_ptr->mptr->m[7];
+        Mat[11] = sel_ptr->mptr->m[11];
+        print_matrizea("M+at", Mat);
         mxm(m, Mat, aux);
-        print_matrizea("rotacion final en modo analisi", m);
+        print_matrizea("rotacion final en modo analisis", m);
     }
     else
     {
@@ -880,7 +887,7 @@ static void teklatua(unsigned char key, int x, int y)
             ald_lokala = 0;
             establecer_camara(sel_ptr->mptr->m[3], sel_ptr->mptr->m[7], sel_ptr->mptr->m[11]);
             print_matrizea("Matriz de la camara mirando hacia el objeto seleccionado:", cam_ptr->mptr->m);
-            print_matrizea("Mcsr: ", cam_ptr->Mcsr);
+            // print_matrizea("Mcsr: ", cam_ptr->Mcsr);
         }
         else
         {
