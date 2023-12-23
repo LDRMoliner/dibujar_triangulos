@@ -880,8 +880,7 @@ static void teklatua(unsigned char key, int x, int y)
             ald_lokala = 0;
             establecer_camara(sel_ptr->mptr->m[3], sel_ptr->mptr->m[7], sel_ptr->mptr->m[11]);
             print_matrizea("Matriz de la camara mirando hacia el objeto seleccionado:", cam_ptr->mptr->m);
-            calcular_mcsr();
-            print_matrizea("Mcsr: ", cam_ptr->Mcsr)
+            print_matrizea("Mcsr: ", cam_ptr->Mcsr);
         }
         else
         {
@@ -1010,6 +1009,8 @@ void perspectiva()
     printf("Perspectiva:\n");
 }
 
+// Establece la cámara dando un punto de atención y recalcula la matriz de cambio de sistema de referencia.
+
 void establecer_camara(double atx, double aty, double atz)
 {
     int i, j;
@@ -1019,12 +1020,12 @@ void establecer_camara(double atx, double aty, double atz)
     double Y_cam[3];
     double up[3] = {0.0, 1.0, 0.0};
 
-    cam_ptr = (my_camera *)malloc(sizeof(my_camera));
-    cam_ptr->mptr = (mlist *)malloc(sizeof(mlist));
+    // Establecemos todo a cero, lo preparamos todo para los nuevos cambios.
 
     for (i = 0, j = 0; i < 16; i++)
     {
         cam_ptr->mptr->m[i] = 0;
+        cam_ptr->Mcsr[i] = 0;
         if (j < 3)
         {
             Z_cam[j] = 0;
@@ -1035,12 +1036,13 @@ void establecer_camara(double atx, double aty, double atz)
     }
 
     cam_ptr->mptr->m[15] = 1;
+    cam_ptr->Mcsr[15] = 1;
 
     // Empezamos por decidir la posición de la cámara.
 
     cam_ptr->mptr->m[3] = 0;
     cam_ptr->mptr->m[7] = 0;
-    cam_ptr->mptr->m[11] = -200; // Para poder verlo todo desde la distancia.
+    cam_ptr->mptr->m[11] = 200; // Para poder verlo todo desde la distancia.
 
     // Calculamos la columna z de la matriz de la cámara.
 
@@ -1079,23 +1081,7 @@ void establecer_camara(double atx, double aty, double atz)
     // Mco[3] *= -1;
     // Mco[7] *= -1;
     // Mco[11] *= -1;
-    for (i = 0; i < 4; i++)
-    {
-        for (j = 0; j < 4; j++)
-        {
-            if (i == j)
-            {
-                cam_ptr->mptr->m[4 * i + j] = 1.0;
-                cam_ptr->Mcsr[4 * i + j] = 1.0;
-            }
-            else
-            {
-                cam_ptr->mptr->m[4 * i + j] = 0;
-                cam_ptr->Mcsr[4 * i + j] = 0;
-            }
-        }
-    }
-    cam_ptr->mptr->m[11] = 200;
+
     calcular_mcsr(cam_ptr);
 }
 
@@ -1133,6 +1119,8 @@ int main(int argc, char **argv)
     ald_lokala = 1;
     perspectiva();
     printf("Preparando la camara...\n");
+    cam_ptr = (my_camera *)malloc(sizeof(my_camera));
+    cam_ptr->mptr = (mlist *)malloc(sizeof(mlist));
     establecer_camara(0, 0, 0);
     calcular_mcsr();
     print_matrizea("Camara estado inicial:", cam_ptr->mptr->m);
