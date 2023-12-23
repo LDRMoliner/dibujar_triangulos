@@ -321,14 +321,17 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
 
 void mpxptr(punto *pt)
 {
+    // printf("punto antes de multiplicar: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
+    // getchar();
     mxp(pt, Mp, *pt);
-    // printf("punto: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
+    // printf("punto multiplicado por matriz de perspectiva: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
     if (pt->w == 0)
-        pt->w = -1.0;
-    pt->x = (pt->x * 500) / pt->w;
+        pt->w = 1.0;
+    pt->x = (pt->x * 500.0) / pt->w;
     pt->y = (pt->y * 500.0) / pt->w;
-    pt->z = (-pt->z * 500.0) / pt->w;
-    pt->w = 1.0;
+    pt->z = (pt->z * 500.0) / pt->w;
+    pt->w = 500.0;
+    // printf("punto multiplicado por 500: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
 }
 
 void dibujar_triangulo(triobj *optr, int i)
@@ -350,32 +353,20 @@ void dibujar_triangulo(triobj *optr, int i)
         return;
     tptr = optr->triptr + i;
     // print_matrizea("Mcsr", cam_ptr->Mcsr);
-    // print_matrizea("Moptr", optr->mptr->m);
-    // printf("Posicion del objeto:\n");
-    // printf("x: %f, y: %f, z: %f\n", optr->mptr->m[3], optr->mptr->m[7], optr->mptr->m[11]);
     // mxm(Modelview, sel_cptr->Mcsr, optr->mptr->m);
-    // print_matrizea("Modelview", Mmodelview);
 
-    // printf("p1: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p1.x, optr->triptr[i].p1.y, optr->triptr[i].p1.z, optr->triptr[i].p1.u, optr->triptr[i].p1.v, optr->triptr[i].p1.w);
-    // printf("p2: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p2.x, optr->triptr[i].p2.y, optr->triptr[i].p2.z, optr->triptr[i].p2.u, optr->triptr[i].p2.v, optr->triptr[i].p2.w);
-    // printf("p3: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p3.x, optr->triptr[i].p3.y, optr->triptr[i].p3.z, optr->triptr[i].p3.u, optr->triptr[i].p3.v, optr->triptr[i].p3.w);
     mxp(&p1, Mmodelview, tptr->p1);
     mxp(&p2, Mmodelview, tptr->p2);
     mxp(&p3, Mmodelview, tptr->p3);
 
     if (persp)
     {
-        //     printf("p1: %f, %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v, p1.w);
-        //     printf("p2: %f, %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v, p2.w);
-        //     printf("p3: %f, %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v, p3.w);
         mpxptr(&p1);
         mpxptr(&p2);
         mpxptr(&p3);
     }
-    // printf("p1: %f, %f, %f, %f, %f, %f\n", p1.x, p1.y, p1.z, p1.u, p1.v, p1.w);
-    // printf("p2: %f, %f, %f, %f, %f, %f\n", p2.x, p2.y, p2.z, p2.u, p2.v, p2.w);
-    // printf("p3: %f, %f, %f, %f, %f, %f\n", p3.x, p3.y, p3.z, p3.u, p3.v, p3.w);
 
+    print_matrizea("m", cam_ptr->mptr->m);
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
@@ -393,9 +384,6 @@ void dibujar_triangulo(triobj *optr, int i)
     pbeheptr = &p3;
 
     encontrar_max_min(&pgoiptr, &perdiptr, &pbeheptr);
-    // printf("pgoi: %f, %f, %f, %f, %f\n", pgoiptr->x, pgoiptr->y, pgoiptr->z, pgoiptr->u, pgoiptr->v);
-    // printf("perdi: %f, %f, %f, %f, %f\n", perdiptr->x, perdiptr->y, perdiptr->z, perdiptr->u, perdiptr->v);
-    // printf("pbehe: %f, %f, %f, %f, %f\n", pbeheptr->x, pbeheptr->y, pbeheptr->z, pbeheptr->u, pbeheptr->v);
 
     // Llamada a función rellenar triángulo.
 
@@ -437,19 +425,13 @@ static void marraztu(void)
     glLoadIdentity();
     if (persp == 1)
     {
-        glOrtho(-500.0, 500.0, -500.0, 500.0, -5, 500.0);
+        glOrtho(-500.0, 500.0, -500.0, 500.0, -500.0, 500.0);
     }
     else
     {
-        glOrtho(-500.0, 500.0, -500.0, 500.0, -500.0, 500.0);
+        glOrtho(-500.0, 500.0, -500.0, 500.0, 0, 500.0);
     }
 
-    for (i = 0; i < sel_ptr->num_triangles; i++)
-    {
-        // printf("p1: %f, %f, %f, %f, %f, %f\n", sel_ptr->triptr[i].p1.x, sel_ptr->triptr[i].p1.y, sel_ptr->triptr[i].p1.z, sel_ptr->triptr[i].p1.u, sel_ptr->triptr[i].p1.v, sel_ptr->triptr[i].p1.w);
-        // printf("p2: %f, %f, %f, %f, %f, %f\n", sel_ptr->triptr[i].p2.x, sel_ptr->triptr[i].p2.y, sel_ptr->triptr[i].p2.z, sel_ptr->triptr[i].p2.u, sel_ptr->triptr[i].p2.v, sel_ptr->triptr[i].p2.w);
-        // printf("p3: %f, %f, %f, %f, %f, %f\n", sel_ptr->triptr[i].p3.x, sel_ptr->triptr[i].p3.y, sel_ptr->triptr[i].p3.z, sel_ptr->triptr[i].p3.u, sel_ptr->triptr[i].p3.v, sel_ptr->triptr[i].p3.w);
-    }
     if (objektuak == 1)
     {
         if (denak == 1)
@@ -498,15 +480,8 @@ void read_from_file(char *fitx)
     }
     else
     {
-        // for (i = 0; i < optr->num_triangles; i++)
-        // {
-        //     printf("p1: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p1.x, optr->triptr[i].p1.y, optr->triptr[i].p1.z, optr->triptr[i].p1.u, optr->triptr[i].p1.v, optr->triptr[i].p1.w);
-        //     printf("p2: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p2.x, optr->triptr[i].p2.y, optr->triptr[i].p2.z, optr->triptr[i].p2.u, optr->triptr[i].p2.v, optr->triptr[i].p2.w);
-        //     printf("p3: %f, %f, %f, %f, %f, %f\n", optr->triptr[i].p3.x, optr->triptr[i].p3.y, optr->triptr[i].p3.z, optr->triptr[i].p3.u, optr->triptr[i].p3.v, optr->triptr[i].p3.w);
-        // }
-        // printf("objektuaren matrizea...\n");
+        printf("objektuaren matrizea...\n");
         optr->mptr = (mlist *)malloc(sizeof(mlist));
-
         for (i = 0; i < 16; i++)
             optr->mptr->m[i] = 0;
         optr->mptr->m[0] = 1.0;
@@ -539,12 +514,11 @@ void transformacion_principal(double m[16])
         aux[i] = 0;
     }
     mlist *new_m = (mlist *)malloc(sizeof(mlist));
-    // printf("aldaera lokala: %d\n", ald_lokala);
     if (ald_lokala == 1)
     {
         if (camara == 1)
         {
-            mxm(new_m->m, m, cam_ptr->mptr->m);
+            mxm(new_m->m, cam_ptr->mptr->m, m);
             new_m->hptr = cam_ptr->mptr;
             cam_ptr->mptr = new_m;
             print_matrizea("Matriz de la camara:", cam_ptr->mptr->m);
@@ -1013,6 +987,8 @@ void perspectiva()
     Mp[11] = -(2 * f * n) / (f - n);
     Mp[14] = -1;
 
+    print_matrizea("Perspectiva:", Mp);
+
     printf("Perspectiva:\n");
 }
 
@@ -1084,10 +1060,6 @@ void establecer_camara(double atx, double aty, double atz)
     cam_ptr->mptr->m[1] = Y_cam[0];
     cam_ptr->mptr->m[5] = Y_cam[1];
     cam_ptr->mptr->m[9] = Y_cam[2];
-
-    // Mco[3] *= -1;
-    // Mco[7] *= -1;
-    // Mco[11] *= -1;
 
     calcular_mcsr(cam_ptr);
 }
