@@ -331,7 +331,7 @@ void mpxptr(punto *pt)
     pt->y = (pt->y * 500.0) / pt->w;
     pt->z = (pt->z * 500.0) / pt->w;
     pt->w = 500.0;
-    // printf("punto multiplicado por 500: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
+    printf("punto multiplicado por 500: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
 }
 
 void dibujar_triangulo(triobj *optr, int i)
@@ -575,10 +575,11 @@ void x_aldaketa(int dir)
 
     angulo = 0.075 * dir;
 
-    if (aldaketa == 't')
+    if (aldaketa == 't' & camara == 0)
     {
         m[3] = dir * 5;
-        print_matrizea("Traslacion: ", m);
+        if (camara == 0)
+            print_matrizea("Traslacion: ", m);
         transformacion_principal(m);
         return;
     }
@@ -645,7 +646,7 @@ void y_aldaketa(int dir)
     Mat[10] = 1;
     Mat[15] = 1;
 
-    if (aldaketa == 't')
+    if (aldaketa == 't' & camara == 0)
     {
         m[7] = dir * 5;
         transformacion_principal(m);
@@ -710,6 +711,16 @@ void z_aldaketa(int dir)
     if (aldaketa == 't')
     {
         m[11] = dir * 5;
+        if (camara == 1)
+        {
+            mlist *new_m = (mlist *)malloc(sizeof(mlist));
+            mxm(new_m->m, cam_ptr->mptr->m, m);
+            new_m->hptr = cam_ptr->mptr;
+            cam_ptr->mptr = new_m;
+            calcular_mcsr();
+            return;
+        }
+        // Nos aseguramos de que se traslade la zeta unicamente en modo analisis.
         transformacion_principal(m);
         return;
     }
@@ -755,7 +766,6 @@ void s_aldaketa(int dir)
 {
     double m[16];
     int exponent = 0;
-    int aldaketa = 0;
     int i = 0;
     for (i = 0; i < 16; i++)
     {
@@ -875,20 +885,40 @@ static void teklatua(unsigned char key, int x, int y)
         s_aldaketa(1);
         break;
     case 'x':
-        x_aldaketa(1);
+        if (camara == 1)
+        {
+            y_aldaketa(-1);
+            break;;
+        }
+        x_aldaketa(-1);
         break;
     case 'y':
-        y_aldaketa(1);
+        if (camara == 1)
+        {
+            x_aldaketa(-1);
+            break;;
+        }
+        y_aldaketa(-1);
         break;
     case 'z':
         printf("z\n");
         z_aldaketa(-1);
         break;
     case 'X':
+        if (camara == 1)
+        {
+            y_aldaketa(1);
+            break;
+        }
         x_aldaketa(-1);
         break;
     case 'Y':
-        y_aldaketa(-1);
+        if (camara == 1)
+        {
+            x_aldaketa(1);
+            break;
+        }
+        y_aldaketa(1);
         break;
     case 'Z':
         z_aldaketa(1);
@@ -1025,8 +1055,15 @@ void establecer_camara(double atx, double aty, double atz)
 
     cam_ptr->mptr->m[3] = 0;
     cam_ptr->mptr->m[7] = 0;
-    cam_ptr->mptr->m[11] = 200; // Para poder verlo todo desde la distancia.
-
+    // Alejamos más la cámara en modo análisis y perspectiva para que no se vea desde tan cerca.
+    if (persp == 1 & ald_lokala == 0)
+    {
+        cam_ptr->mptr->m[11] = 600; // Para poder verlo todo desde la distancia.
+    }
+    else
+    {
+        cam_ptr->mptr->m[11] = 350; // Para poder verlo todo desde la distancia.
+    }
     // Calculamos la columna z de la matriz de la cámara.
 
     Z_cam[0] = cam_ptr->mptr->m[3] - atx;
@@ -1094,7 +1131,7 @@ int main(int argc, char **argv)
     camara = 1;
     foptr = 0;
     sel_ptr = 0;
-    aldaketa = 'r';
+    aldaketa = 't';
     ald_lokala = 1;
     perspectiva();
     printf("Preparando la camara...\n");
