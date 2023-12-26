@@ -223,10 +223,10 @@ void calcular_mcsr()
 void mxp(punto *pptr, double m[16], punto p)
 {
     // print_matrizea("");
-    pptr->x = p.x * m[0] + p.y * m[1] + p.z * m[2] + m[3];
-    pptr->y = p.x * m[4] + p.y * m[5] + p.z * m[6] + m[7];
-    pptr->z = p.x * m[8] + p.y * m[9] + p.z * m[10] + m[11];
-    pptr->w = p.x * m[12] + p.y * m[13] + p.z * m[14] + m[15];
+    pptr->x = p.x * m[0] + p.y * m[1] + p.z * m[2] + p.w * m[3];
+    pptr->y = p.x * m[4] + p.y * m[5] + p.z * m[6] + p.w * m[7];
+    pptr->z = p.x * m[8] + p.y * m[9] + p.z * m[10] + p.w * m[11];
+    pptr->w = p.x * m[12] + p.y * m[13] + p.z * m[14] + p.w * m[15];
     pptr->u = p.u;
     pptr->v = p.v;
 }
@@ -321,16 +321,17 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
 
 void mpxptr(punto *pt)
 {
-    // printf("punto antes de multiplicar: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
+    printf("punto antes de multiplicar: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
     // getchar();
+    // print_matrizea("Matriz de perspectiva Borja:", Mp);
     mxp(pt, Mp, *pt);
-    // printf("punto multiplicado por matriz de perspectiva: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
+    printf("punto multiplicado por matriz de perspectiva: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
     if (pt->w == 0)
         pt->w = 1.0;
     pt->x = (pt->x * 500.0) / pt->w;
     pt->y = (pt->y * 500.0) / pt->w;
     pt->z = (pt->z * 500.0) / pt->w;
-    pt->w = 500.0;
+    pt->w = 1;
     printf("punto multiplicado por 500: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
 }
 
@@ -361,8 +362,12 @@ void dibujar_triangulo(triobj *optr, int i)
 
     if (persp)
     {
+        printf("--------------------Triplete de puntos-----------------------------------------\n");
+        printf("-P1-\n");
         mpxptr(&p1);
+        printf("-P2-\n");
         mpxptr(&p2);
+        printf("-P3-\n");
         mpxptr(&p3);
     }
 
@@ -370,6 +375,12 @@ void dibujar_triangulo(triobj *optr, int i)
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
+        if (abs(p1.x) > 500 & abs(p2.x) > 500 & abs(p3.x) > 500)
+        {
+            printf("Punto fuera de la pantalla\n");
+            glEnd();
+            return;
+        }
         glVertex3d(p1.x, p1.y, p1.z);
         glVertex3d(p2.x, p2.y, p2.z);
         glVertex3d(p3.x, p3.y, p3.z);
@@ -885,10 +896,12 @@ static void teklatua(unsigned char key, int x, int y)
         s_aldaketa(1);
         break;
     case 'x':
+        printf("/////////////////////CAMBIO EN X/////////////////////\n");
         if (camara == 1)
         {
             y_aldaketa(-1);
-            break;;
+            break;
+            ;
         }
         x_aldaketa(-1);
         break;
@@ -896,7 +909,8 @@ static void teklatua(unsigned char key, int x, int y)
         if (camara == 1)
         {
             x_aldaketa(-1);
-            break;;
+            break;
+            ;
         }
         y_aldaketa(-1);
         break;
@@ -1149,7 +1163,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        read_from_file("z.txt");
+        // read_from_file("z.txt");
     }
 
     sel_ptr->mptr->m[3] = 200;
