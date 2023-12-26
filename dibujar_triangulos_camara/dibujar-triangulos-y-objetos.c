@@ -12,6 +12,7 @@
 #include <math.h>
 #include <malloc.h>
 #include "cargar-triangulo.h"
+#include "operaciones-vectoriales.h"
 
 typedef struct mlist
 {
@@ -37,7 +38,6 @@ typedef struct my_camera
 // información de textura
 
 extern int load_ppm(char *file, unsigned char **bufferptr, int *dimxptr, int *dimyptr);
-void print_matrizea(char *str, double to_print[16]);
 void establecer_camara(double atx, double aty, double atz);
 unsigned char *bufferra;
 int dimx, dimy;
@@ -64,46 +64,6 @@ double at[3] = {0.0};
 double Mmodelview[16] = {0.0};
 
 char fitxiz[100];
-
-void obtener_rotacion_rodrigues(double x, double y, double z, double angulo, double m[16])
-{
-    // Matriz de rotación rodrigues
-
-    m[0] = cos(angulo) + (1 - cos(angulo)) * x * x;
-    m[1] = (1 - cos(angulo)) * x * y - sin(angulo) * z;
-    m[2] = (1 - cos(angulo)) * x * z + sin(angulo) * y;
-
-    // Segunda fila
-    m[4] = (1 - cos(angulo)) * x * y + sin(angulo) * z;
-    m[5] = cos(angulo) + (1 - cos(angulo)) * y * y;
-    m[6] = (1 - cos(angulo)) * y * z - sin(angulo) * x;
-
-    // Tercera fila
-    m[8] = (1 - cos(angulo)) * x * z - sin(angulo) * y;
-    m[9] = (1 - cos(angulo)) * y * z + sin(angulo) * x;
-    m[10] = cos(angulo) + (1 - cos(angulo)) * z * z;
-
-    m[15] = 1.0;
-    print_matrizea("rotacion rodrigues", m);
-}
-void mxm(double resultado[16], double operando_izquierdo[16], double operando_derecho[16])
-{
-    int i, j, k;
-    double res;
-    for (i = 0; i < 4; i++)
-    {
-        for (j = 0; j < 4; j++)
-        {
-            res = 0.0;
-            for (k = 0; k < 4; k++)
-            {
-                res += operando_izquierdo[i * 4 + k] * operando_derecho[k * 4 + j];
-            }
-            // printf("res: %f\n", res);
-            resultado[i * 4 + j] = res;
-        }
-    }
-}
 
 // TODO
 // funtzio honek u eta v koordenatuei dagokien pointerra itzuli behar du.
@@ -169,29 +129,6 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
     glEnd();
 }
 
-void print_matrizea(char *str, double to_print[16])
-{
-    int i;
-    printf("%s\n", str);
-    for (i = 0; i < 4; i++)
-        printf("%lf, %lf, %lf, %lf\n", to_print[i * 4], to_print[i * 4 + 1], to_print[i * 4 + 2],
-               to_print[i * 4 + 3]);
-}
-void normalizar(double vector[3])
-{
-    double length = 0.0;
-    int i;
-    for (i = 0; i < 3; i++)
-    {
-        length += vector[i] * vector[i];
-    }
-    length = sqrt(length);
-    for (i = 0; i < 3; i++)
-    {
-        vector[i] = vector[i] / length;
-    }
-}
-
 // A partir de la matriz de la cánara, se calcula la nueva Mcsr. Hay que llamar a esta función cada vez que se realice una transformación en la cámara.
 
 void calcular_mcsr()
@@ -215,20 +152,6 @@ void calcular_mcsr()
         }
     }
     cam_ptr->Mcsr[15] = 1.0;
-}
-
-// TODO
-// aurrerago egitekoa
-// para más adelante
-void mxp(punto *pptr, double m[16], punto p)
-{
-    // print_matrizea("");
-    pptr->x = p.x * m[0] + p.y * m[1] + p.z * m[2] + p.w * m[3];
-    pptr->y = p.x * m[4] + p.y * m[5] + p.z * m[6] + p.w * m[7];
-    pptr->z = p.x * m[8] + p.y * m[9] + p.z * m[10] + p.w * m[11];
-    pptr->w = p.x * m[12] + p.y * m[13] + p.z * m[14] + p.w * m[15];
-    pptr->u = p.u;
-    pptr->v = p.v;
 }
 
 void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, float i, punto *corte)
@@ -375,9 +298,9 @@ void dibujar_triangulo(triobj *optr, int i)
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
-        if (abs(p1.x) > 500 & abs(p2.x) > 500 & abs(p3.x) > 500)
+        if (abs(p1.x) > 700 & abs(p2.x) > 700 & abs(p3.x) > 700 | abs(p1.y) > 700 & abs(p2.y) > 700 & abs(p3.y) > 700 | abs(p1.z) > 700 & abs(p2.z) > 700 & abs(p3.z) > 700)
         {
-            printf("Punto fuera de la pantalla\n");
+            printf("Triangulo fuera del cubo.\n");
             glEnd();
             return;
         }
@@ -896,7 +819,7 @@ static void teklatua(unsigned char key, int x, int y)
         s_aldaketa(1);
         break;
     case 'x':
-        printf("/////////////////////CAMBIO EN X/////////////////////\n");
+        printf("//////////////////////////////////////////////////////CAMBIO EN X////////////////////////////////////////////////////////////////////\n");
         if (camara == 1)
         {
             y_aldaketa(-1);
@@ -906,6 +829,7 @@ static void teklatua(unsigned char key, int x, int y)
         x_aldaketa(-1);
         break;
     case 'y':
+        printf("//////////////////////////////////////////////////////CAMBIO EN Y////////////////////////////////////////////////////////////////////\n");
         if (camara == 1)
         {
             x_aldaketa(-1);
@@ -915,6 +839,7 @@ static void teklatua(unsigned char key, int x, int y)
         y_aldaketa(-1);
         break;
     case 'z':
+        printf("/////////////////////////////////////////////////////CAMBIO EN Z//////////////////////////////////////////////////////////////////////\n");
         printf("z\n");
         z_aldaketa(-1);
         break;
@@ -1154,7 +1079,7 @@ int main(int argc, char **argv)
     establecer_camara(0, 0, 0);
     calcular_mcsr();
     print_matrizea("Camara estado inicial:", cam_ptr->mptr->m);
-    read_from_file("k.txt");
+    read_from_file("z.txt");
     sel_ptr->mptr->m[3] = -200;
     sel_ptr->mptr->m[11] = 200;
     if (argc > 1)

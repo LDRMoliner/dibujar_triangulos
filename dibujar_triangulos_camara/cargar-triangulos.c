@@ -1,19 +1,8 @@
 #include <stdio.h>
 #include <malloc.h>
+#include "cargar-triangulo.h"
 #define MAXLINE 200
 
-/*
-typedef struct punto
-{
-float x, y, z, u,v;
-} punto;
-
-typedef struct hiruki
-{
-punto p1,p2,p3;
-} hiruki;
-*/
-#include "cargar-triangulo.h"
 
 int cargar_triangulos(char *fitxiz, int *hkopptr, hiruki **hptrptr)
 {
