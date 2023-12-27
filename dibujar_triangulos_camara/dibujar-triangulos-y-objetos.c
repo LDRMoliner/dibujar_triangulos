@@ -298,8 +298,9 @@ void dibujar_triangulo(triobj *optr, int i)
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
-        if (abs(p1.x) > 1600 & abs(p2.x) > 1600 & abs(p3.x) > 1600 | abs(p1.y) > 1600 & abs(p2.y) > 1600 & abs(p3.y) > 1600 | abs(p1.z) > 1600 & abs(p2.z) > 1600 & abs(p3.z) > 1600)
+        if ((abs(p1.x) > 500 | abs(p2.x) > 500 | abs(p3.x) > 500) | (abs(p1.y) > 500 | abs(p2.y) > 500 | abs(p3.y) > 500) | (abs(p1.z) > 500 | abs(p2.z) > 500 | abs(p3.z) > 500))
         {
+            
             printf("Triangulo fuera del cubo.\n");
             glEnd();
             return;
@@ -1079,7 +1080,7 @@ int main(int argc, char **argv)
     establecer_camara(0, 0, 0);
     calcular_mcsr();
     print_matrizea("Camara estado inicial:", cam_ptr->mptr->m);
-    read_from_file("z.txt");
+    read_from_file("k.txt");
     sel_ptr->mptr->m[3] = -200;
     sel_ptr->mptr->m[11] = 200;
     if (argc > 1)
@@ -1088,7 +1089,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        // read_from_file("z.txt");
+        read_from_file("z.txt");
     }
 
     sel_ptr->mptr->m[3] = 200;
