@@ -298,7 +298,7 @@ void dibujar_triangulo(triobj *optr, int i)
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
-        if (abs(p1.x) > 700 & abs(p2.x) > 700 & abs(p3.x) > 700 | abs(p1.y) > 700 & abs(p2.y) > 700 & abs(p3.y) > 700 | abs(p1.z) > 700 & abs(p2.z) > 700 & abs(p3.z) > 700)
+        if (abs(p1.x) > 1600 & abs(p2.x) > 1600 & abs(p3.x) > 1600 | abs(p1.y) > 1600 & abs(p2.y) > 1600 & abs(p3.y) > 1600 | abs(p1.z) > 1600 & abs(p2.z) > 1600 & abs(p3.z) > 1600)
         {
             printf("Triangulo fuera del cubo.\n");
             glEnd();
@@ -849,7 +849,7 @@ static void teklatua(unsigned char key, int x, int y)
             y_aldaketa(1);
             break;
         }
-        x_aldaketa(-1);
+        x_aldaketa(1);
         break;
     case 'Y':
         if (camara == 1)
