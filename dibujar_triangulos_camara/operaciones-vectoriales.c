@@ -84,30 +84,29 @@ int mxp(punto *pptr, double m[16], punto p)
     return 0;
 }
 
-// void equation_plane(float x1, float y1, 
-//                     float z1, float x2,
-//                     float y2, float z2, 
-//                     float x3, float y3, float z3)
-// {   
-//     double v1[3];
-//     float a1 = x2 - x1;
-//     float b1 = y2 - y1;
-//     float c1 = z2 - z1;
-//     float a2 = x3 - x1;
-//     float b2 = y3 - y1;
-//     float c2 = z3 - z1;
-//     float a = b1 * c2 - b2 * c1;
-//     float b = a2 * c1 - a1 * c2;
-//     float c = a1 * b2 - b1 * a2;
-//     float d = (- a * x1 - b * y1 - c * z1);
+punto calcular_normal(punto p1, punto p2, punto p3) 
+{   
+    double v1[3];
+    punto normal;
+    float a1 = p2.x - p1.x;
+    float b1 = p2.y - p1.y;
+    float c1 = p2.z - p1.z;
+    float a2 = p3.x - p1.x;
+    float b2 = p3.y - p1.y;
+    float c2 = p3.z - p1.z;
+    float a = b1 * c2 - b2 * c1;
+    float b = a2 * c1 - a1 * c2;
+    float c = a1 * b2 - b1 * a2;
    
-//     v1[0] = a;
-//     v1[1] = b;
-//     v1[2] = c;
+    v1[0] = a;
+    v1[1] = b;
+    v1[2] = c;
 
-//     normalizar(v1);
-//      printf("equation of plane is %.2f x + %.2f"
-//         " y + %.2f z + %.2f = 0.",a,b,c,d);
-//     printf("normal vector is %.2f %.2f %.2f\n", v1[0], v1[1], v1[2]);
-//     return;
-// }
+    normalizar(v1);
+
+    normal.x = v1[0];
+    normal.y = v1[1];
+    normal.z = v1[2];
+
+    return normal;
+}

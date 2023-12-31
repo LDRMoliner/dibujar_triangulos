@@ -52,6 +52,7 @@ my_camera *cam_ptr;
 // Aquí se guardan los valores para las decisiones que se toman.
 int denak;
 int lineak;
+int normalak;
 int analisis;
 int camara;
 int persp;
@@ -92,7 +93,6 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
     unsigned char r, g, b;
 
     glBegin(GL_POINTS);
-
     // Calculamos la pendiente de la recta que corta el triángulo, si c1x = c2x evitamos dividir por cero.
     if (c1x != c2x)
     {
@@ -112,7 +112,6 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
         // TODO
         // color_textura funtzioa ondo kodetu
         // programar de forma correcta la función color_textura
-
         colorv = color_textura(u, v);
         r = colorv[0];
         g = colorv[1];
@@ -126,6 +125,7 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
         v += difv;
         zkoord += difz;
     }
+
     glEnd();
 }
 
@@ -264,6 +264,7 @@ void dibujar_triangulo(triobj *optr, int i)
     punto *pgoiptr, *pbeheptr, *perdiptr;
     punto *pgoiptr2, *pbeheptr2, *perdiptr2;
     punto corte1, corte2;
+    punto normal;
     int start1, star2;
     double aux[16];
     float t = 1, s = 1, q = 1;
@@ -298,9 +299,9 @@ void dibujar_triangulo(triobj *optr, int i)
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
-        if ((abs(p1.x) > 500 | abs(p2.x) > 500 | abs(p3.x) > 500) | (abs(p1.y) > 500 | abs(p2.y) > 500 | abs(p3.y) > 500) | (abs(p1.z) > 500 | abs(p2.z) > 500 | abs(p3.z) > 500))
+        if ((abs(p1.x) > 700 | abs(p2.x) > 700 | abs(p3.x) > 700) | (abs(p1.y) > 700 | abs(p2.y) > 700 | abs(p3.y) > 700) | (abs(p1.z) > 700 | abs(p2.z) > 700 | abs(p3.z) > 700))
         {
-            
+
             printf("Triangulo fuera del cubo.\n");
             glEnd();
             return;
@@ -309,6 +310,17 @@ void dibujar_triangulo(triobj *optr, int i)
         glVertex3d(p2.x, p2.y, p2.z);
         glVertex3d(p3.x, p3.y, p3.z);
         glEnd();
+
+        if (normalak)
+        {
+            glBegin(GL_LINES);
+            glVertex3d(p3.x, p3.y, p3.z);
+            // normal = calcular_normal(p1, p2, p3);
+            // printf("Normal: %f, %f, %f\n", normal.x, normal.y, normal.z);
+            glVertex3d((p3.x * 1000 + tptr->N.x), (p3.y * 1000 + tptr->N.y) , (p3.z * 1000 + tptr->N.z) );
+            printf("Dibujada linea de normal, del punto %f, %f, %f al punto %f, %f, %f\n", p3.x, p3.y, p3.z, (p3.x + tptr->N.x) * 200, (p3.y + tptr->N.y) * 200, (p3.z + tptr->N.z) * 200);
+            glEnd();
+        }
         return;
     }
 
@@ -766,6 +778,16 @@ static void teklatua(unsigned char key, int x, int y)
             }
         }
         break;
+    case 'n':
+        if (normalak)
+        {
+            normalak = 0;
+        }
+        else
+        {
+            normalak = 1;
+        }
+        break;
     case 'd':
         if (denak == 1)
             denak = 0;
@@ -998,7 +1020,7 @@ void establecer_camara(double atx, double aty, double atz)
     // Alejamos más la cámara en modo análisis y perspectiva para que no se vea desde tan cerca.
     if (persp == 1 & ald_lokala == 0)
     {
-        cam_ptr->mptr->m[11] = 600; // Para poder verlo todo desde la distancia.
+        cam_ptr->mptr->m[11] = 400; // Para poder verlo todo desde la distancia.
     }
     else
     {
@@ -1061,11 +1083,12 @@ int main(int argc, char **argv)
         printf("Ez dago texturaren fitxategia (testura.ppm)\n");
         exit(-1);
     }
-    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
     denak = 1;
     lineak = 1;
+    normalak = 0;
     persp = 1;
     objektuak = 1;
     camara = 1;

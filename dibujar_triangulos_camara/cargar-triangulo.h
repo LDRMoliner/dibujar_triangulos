@@ -9,6 +9,7 @@ typedef struct punto
 typedef struct hiruki
 {
     punto p1, p2, p3;
+    punto N;
 } hiruki;
 
 int cargar_triangulos_color(char *fitxiz, int *hkopptr, hiruki **hptrptr, unsigned char **rgbptr);
