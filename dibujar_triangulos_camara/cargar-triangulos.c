@@ -161,10 +161,10 @@ int cargar_triangulos_color(char *fitxiz, int *hkopptr, hiruki **hptrptr, unsign
 			}
 			(*hptrptr)[i].N = calcular_normal((*hptrptr)[i].p1, (*hptrptr)[i].p2, (*hptrptr)[i].p3);
 			// Puntos del triangulo printeados en pantalla:
-			printf("Punto 1: %f, %f, %f\n", (*hptrptr)[i].p1.x, (*hptrptr)[i].p1.y, (*hptrptr)[i].p1.z);
-			printf("Punto 2: %f, %f, %f\n", (*hptrptr)[i].p2.x, (*hptrptr)[i].p2.y, (*hptrptr)[i].p2.z);
-			printf("Punto 3: %f, %f, %f\n", (*hptrptr)[i].p3.x, (*hptrptr)[i].p3.y, (*hptrptr)[i].p3.z);
-			printf("Vector normal: %f, %f, %f\n", (*hptrptr)[i].N.x, (*hptrptr)[i].N.y, (*hptrptr)[i].N.z);
+			// printf("Punto 1: %f, %f, %f\n", (*hptrptr)[i].p1.x, (*hptrptr)[i].p1.y, (*hptrptr)[i].p1.z);
+			// printf("Punto 2: %f, %f, %f\n", (*hptrptr)[i].p2.x, (*hptrptr)[i].p2.y, (*hptrptr)[i].p2.z);
+			// printf("Punto 3: %f, %f, %f\n", (*hptrptr)[i].p3.x, (*hptrptr)[i].p3.y, (*hptrptr)[i].p3.z);
+			// printf("Vector normal: %f, %f, %f\n", (*hptrptr)[i].N.x, (*hptrptr)[i].N.y, (*hptrptr)[i].N.z);
 			(*hptrptr)[i].N.u = 0.0;
 			(*hptrptr)[i].N.v = 0.0;
 			// getchar();

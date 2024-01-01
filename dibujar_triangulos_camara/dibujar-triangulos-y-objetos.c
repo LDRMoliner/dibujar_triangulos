@@ -52,6 +52,7 @@ my_camera *cam_ptr;
 // Aquí se guardan los valores para las decisiones que se toman.
 int denak;
 int lineak;
+int culling;
 int normalak;
 int analisis;
 int camara;
@@ -244,18 +245,18 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
 
 void mpxptr(punto *pt)
 {
-    printf("punto antes de multiplicar: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
+    // printf("punto antes de multiplicar: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
     // getchar();
     // print_matrizea("Matriz de perspectiva Borja:", Mp);
     mxp(pt, Mp, *pt);
-    printf("punto multiplicado por matriz de perspectiva: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
+    // printf("punto multiplicado por matriz de perspectiva: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
     if (pt->w == 0)
         pt->w = 1.0;
     pt->x = (pt->x * 500.0) / pt->w;
     pt->y = (pt->y * 500.0) / pt->w;
     pt->z = (pt->z * 500.0) / pt->w;
     pt->w = 1;
-    printf("punto multiplicado por 500: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
+    // printf("punto multiplicado por 500: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
 }
 
 void dibujar_triangulo(triobj *optr, int i)
@@ -265,6 +266,7 @@ void dibujar_triangulo(triobj *optr, int i)
     punto *pgoiptr2, *pbeheptr2, *perdiptr2;
     punto corte1, corte2;
     punto normal;
+    double v[3] = {0.0, 0.0, 0.0};
     int start1, star2;
     double aux[16];
     float t = 1, s = 1, q = 1;
@@ -280,22 +282,32 @@ void dibujar_triangulo(triobj *optr, int i)
     // print_matrizea("Mcsr", cam_ptr->Mcsr);
     // mxm(Modelview, sel_cptr->Mcsr, optr->mptr->m);
 
+    v[0] = cam_ptr->mptr->m[0] - optr->mptr->m[0];
+    v[1] = cam_ptr->mptr->m[4] - optr->mptr->m[4];
+    v[2] = cam_ptr->mptr->m[8] - optr->mptr->m[8];
+
+    if (culling && ((v[0] * tptr->N.x) + (v[1] * tptr->N.y) + (v[2] * tptr->N.z)) < 0)
+    {
+        printf("Este no entra: %lf\n", (v[0] * tptr->N.x) + (v[1] * tptr->N.y) + (v[2] * tptr->N.z));
+        printf("Triangulo no visible.\n");
+        return;
+    }
     mxp(&p1, Mmodelview, tptr->p1);
     mxp(&p2, Mmodelview, tptr->p2);
     mxp(&p3, Mmodelview, tptr->p3);
 
     if (persp)
     {
-        printf("--------------------Triplete de puntos-----------------------------------------\n");
-        printf("-P1-\n");
+        // printf("--------------------Triplete de puntos-----------------------------------------\n");
+        // printf("-P1-\n");
         mpxptr(&p1);
-        printf("-P2-\n");
+        // printf("-P2-\n");
         mpxptr(&p2);
-        printf("-P3-\n");
+        // printf("-P3-\n");
         mpxptr(&p3);
     }
 
-    print_matrizea("m", cam_ptr->mptr->m);
+    // print_matrizea("m", cam_ptr->mptr->m);
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
@@ -314,11 +326,11 @@ void dibujar_triangulo(triobj *optr, int i)
         if (normalak)
         {
             glBegin(GL_LINES);
-            glVertex3d(p3.x, p3.y, p3.z);
+            glVertex3d(p2.x, p2.y, p2.z);
             // normal = calcular_normal(p1, p2, p3);
-            // printf("Normal: %f, %f, %f\n", normal.x, normal.y, normal.z);
-            glVertex3d((p3.x * 1000 + tptr->N.x), (p3.y * 1000 + tptr->N.y) , (p3.z * 1000 + tptr->N.z) );
-            printf("Dibujada linea de normal, del punto %f, %f, %f al punto %f, %f, %f\n", p3.x, p3.y, p3.z, (p3.x + tptr->N.x) * 200, (p3.y + tptr->N.y) * 200, (p3.z + tptr->N.z) * 200);
+            printf("Normal: %f, %f, %f\n", tptr->N.x, tptr->N.y, tptr->N.z);
+            glVertex3d((p2.x + tptr->N.x) * 1.1, (p2.y + tptr->N.y) * 1.1, (p2.z + tptr->N.z) * 1.1);
+            // printf("Dibujada linea de normal, del punto %f, %f, %f al punto %f, %f, %f\n", p3.x, p3.y, p3.z, (p3.x + tptr->N.x) * 200, (p3.y + tptr->N.y) * 200, (p3.z + tptr->N.z) * 200);
             glEnd();
         }
         return;
@@ -778,6 +790,16 @@ static void teklatua(unsigned char key, int x, int y)
             }
         }
         break;
+    case 'b':
+        if (culling)
+        {
+            culling = 0;
+        }
+        else
+        {
+            culling = 1;
+        }
+        break;
     case 'n':
         if (normalak)
         {
@@ -1088,6 +1110,7 @@ int main(int argc, char **argv)
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
     denak = 1;
     lineak = 1;
+    culling = 1;
     normalak = 0;
     persp = 1;
     objektuak = 1;
@@ -1105,7 +1128,7 @@ int main(int argc, char **argv)
     print_matrizea("Camara estado inicial:", cam_ptr->mptr->m);
     read_from_file("k.txt");
     sel_ptr->mptr->m[3] = -200;
-    sel_ptr->mptr->m[11] = 200;
+    sel_ptr->mptr->m[11] = 0;
     if (argc > 1)
     {
         read_from_file(argv[1]);
@@ -1116,7 +1139,7 @@ int main(int argc, char **argv)
     }
 
     sel_ptr->mptr->m[3] = 200;
-    sel_ptr->mptr->m[11] = 200;
+    sel_ptr->mptr->m[11] = 0;
     glutMainLoop();
     return 0;
 }
