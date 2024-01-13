@@ -32,7 +32,7 @@ int obtener_rotacion_rodrigues(double x, double y, double z, double angulo, doub
     m[10] = cos(angulo) + (1 - cos(angulo)) * z * z;
 
     m[15] = 1.0;
-    print_matrizea("rotacion rodrigues", m);
+    // print_matrizea("rotacion rodrigues", m);
     return 0;
 }
 
@@ -53,6 +53,19 @@ int mxm(double resultado[16], double operando_izquierdo[16], double operando_der
             resultado[i * 4 + j] = res;
         }
     }
+    return 0;
+}
+int normalizar_vector(punto *vector)
+{
+    double length = 0.0;
+
+    length += vector->x * vector->x + vector->y * vector->y + vector->z * vector->z;
+    length = sqrt(length);
+    
+    vector->x = vector->x / length;
+    vector->y = vector->y / length;
+    vector->z = vector->z / length;
+
     return 0;
 }
 
@@ -78,35 +91,44 @@ int mxp(punto *pptr, double m[16], punto p)
     pptr->x = p.x * m[0] + p.y * m[1] + p.z * m[2] + p.w * m[3];
     pptr->y = p.x * m[4] + p.y * m[5] + p.z * m[6] + p.w * m[7];
     pptr->z = p.x * m[8] + p.y * m[9] + p.z * m[10] + p.w * m[11];
-    pptr->w = p.x * m[12] + p.y * m[13] + p.z * m[14] + p.w * m[15];
+    // Distinguimos entre punto y vector de ésta forma.
+    if (pptr->w != 0.0)
+        pptr->w = p.x * m[12] + p.y * m[13] + p.z * m[14] + p.w * m[15];
     pptr->u = p.u;
     pptr->v = p.v;
     return 0;
 }
 
-punto calcular_normal(punto p1, punto p2, punto p3) 
-{   
-    double v1[3];
+punto calcular_normal(punto p1, punto p2, punto p3)
+{
     punto normal;
-    float a1 = p2.x - p1.x;
-    float b1 = p2.y - p1.y;
-    float c1 = p2.z - p1.z;
-    float a2 = p3.x - p1.x;
-    float b2 = p3.y - p1.y;
-    float c2 = p3.z - p1.z;
-    float a = b1 * c2 - b2 * c1;
-    float b = a2 * c1 - a1 * c2;
-    float c = a1 * b2 - b1 * a2;
-   
-    v1[0] = a;
-    v1[1] = b;
-    v1[2] = c;
+    double v1[4];
+    double v2[4];
+    double N[4];
 
-    normalizar(v1);
+    v1[0] = p2.x - p1.x;
+    v1[1] = p2.y - p1.y;
+    v1[2] = p2.z - p1.z;
+    v1[3] = 0;
 
-    normal.x = v1[0];
-    normal.y = v1[1];
-    normal.z = v1[2];
+    v2[0] = p3.x - p1.x;
+    v2[1] = p3.y - p1.y;
+    v2[2] = p3.z - p1.z;
+    v2[3] = 0;
+
+    N[0] = v1[1] * v2[2] - v1[2] * v2[1];
+    N[1] = -(v1[0] * v2[2] - v2[0] * v1[2]);
+    N[2] = v1[0] * v2[1] - v2[0] * v1[1];
+
+    printf("Perpendicular entre: %f, %f, %f y %f, %f, %f: \n", v1[0], v1[1], v1[2], v2[0], v2[1], v2[2]);
+    printf("%f, %f, %f\n", N[0], N[1], N[2]);
+    normalizar(N);
+    printf("Normalizado: %f, %f, %f\n", N[0], N[1], N[2]);
+
+    normal.x = N[0];
+    normal.y = N[1];
+    normal.z = N[2];
+    normal.w = 0;
 
     return normal;
 }

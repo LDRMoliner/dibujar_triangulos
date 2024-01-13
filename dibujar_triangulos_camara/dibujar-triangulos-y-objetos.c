@@ -48,12 +48,14 @@ triobj *sel_ptr;
 
 // Direcciones de los objetos que SÍ son cámaras.
 my_camera *cam_ptr;
+my_camera *fcamptr;
 
 // Aquí se guardan los valores para las decisiones que se toman.
 int denak;
 int lineak;
 int culling;
 int normalak;
+int objeto_perspectiva;
 int analisis;
 int camara;
 int persp;
@@ -67,7 +69,6 @@ double Mmodelview[16] = {0.0};
 
 char fitxiz[100];
 
-// TODO
 // funtzio honek u eta v koordenatuei dagokien pointerra itzuli behar du.
 // debe devolver el pointer correspondiente a las coordenadas u y v
 unsigned char *color_textura(float u, float v)
@@ -83,7 +84,6 @@ unsigned char *color_textura(float u, float v)
     return (lag + 3 * (desplazamiento_v * dimx + desplazamiento_u));
 }
 
-// TODO
 // lerroa marrazten du, baina testuraren kodea egokitu behar da
 // dibuja una linea pero hay que codificar la textura
 void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, float c2x, float c2z, float c2u, float c2v)
@@ -132,28 +132,30 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
 
 // A partir de la matriz de la cánara, se calcula la nueva Mcsr. Hay que llamar a esta función cada vez que se realice una transformación en la cámara.
 
-void calcular_mcsr()
+void calcular_mcsr(my_camera *my_cam)
 {
     int i, j;
 
     for (i = 0; i < 16; i++)
     {
-        cam_ptr->Mcsr[i] = 0.0;
+        my_cam->Mcsr[i] = 0.0;
     }
 
-    cam_ptr->Mcsr[3] = -(cam_ptr->mptr->m[3] * cam_ptr->mptr->m[0] + cam_ptr->mptr->m[7] * cam_ptr->mptr->m[4] + cam_ptr->mptr->m[11] * cam_ptr->mptr->m[8]);
-    cam_ptr->Mcsr[7] = -(cam_ptr->mptr->m[3] * cam_ptr->mptr->m[1] + cam_ptr->mptr->m[7] * cam_ptr->mptr->m[5] + cam_ptr->mptr->m[11] * cam_ptr->mptr->m[9]);
-    cam_ptr->Mcsr[11] = -(cam_ptr->mptr->m[3] * cam_ptr->mptr->m[2] + cam_ptr->mptr->m[7] * cam_ptr->mptr->m[6] + cam_ptr->mptr->m[11] * cam_ptr->mptr->m[10]);
+    my_cam->Mcsr[3] = -(my_cam->mptr->m[3] * my_cam->mptr->m[0] + my_cam->mptr->m[7] * my_cam->mptr->m[4] + my_cam->mptr->m[11] * my_cam->mptr->m[8]);
+    my_cam->Mcsr[7] = -(my_cam->mptr->m[3] * my_cam->mptr->m[1] + my_cam->mptr->m[7] * my_cam->mptr->m[5] + my_cam->mptr->m[11] * my_cam->mptr->m[9]);
+    my_cam->Mcsr[11] = -(my_cam->mptr->m[3] * my_cam->mptr->m[2] + my_cam->mptr->m[7] * my_cam->mptr->m[6] + my_cam->mptr->m[11] * my_cam->mptr->m[10]);
     // Poner los valores de Mc de fila en columna en Mcsr y la ultima fila de la Mcsr 0,0,0,1
     for (i = 0; i < 3; i++)
     {
         for (j = 0; j < 3; j++)
         {
-            cam_ptr->Mcsr[i * 4 + j] = cam_ptr->mptr->m[j * 4 + i];
+            my_cam->Mcsr[i * 4 + j] = my_cam->mptr->m[j * 4 + i];
         }
     }
-    cam_ptr->Mcsr[15] = 1.0;
+    my_cam->Mcsr[15] = 1.0;
 }
+
+// Calculamos rectas. Calculamos punto de corte. Devolvemos punto de corte. Explicado mejor en la documentación paso a paso.
 
 void calcula_punto_corte(punto *punto_superior, punto *punto_inferior, float i, punto *corte)
 {
@@ -255,17 +257,22 @@ void mpxptr(punto *pt)
     pt->x = (pt->x * 500.0) / pt->w;
     pt->y = (pt->y * 500.0) / pt->w;
     pt->z = (pt->z * 500.0) / pt->w;
+
     pt->w = 1;
     // printf("punto multiplicado por 500: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
 }
 
+/**
+ * Función encargada de, tal y como dice el nombre de la función, dibujar un triángulo. Dependiendo del modo de proyección, lo hará en perspectiva
+ * (multiplicándolo por ésta matriz) o en paralelo (simplemente multiplicándolo la matriz de la cámara).
+ * A parte de ésto, también se encarga de dibujar las líneas de las normales, si se ha activado la opción de dibujarlas.
+*/
 void dibujar_triangulo(triobj *optr, int i)
 {
     hiruki *tptr;
     punto *pgoiptr, *pbeheptr, *perdiptr;
     punto *pgoiptr2, *pbeheptr2, *perdiptr2;
     punto corte1, corte2;
-    punto normal;
     double v[3] = {0.0, 0.0, 0.0};
     int start1, star2;
     double aux[16];
@@ -274,7 +281,7 @@ void dibujar_triangulo(triobj *optr, int i)
     float c1x, c1z, c1u, c1v, c2x, c2z, c2u, c2v;
     int linea;
     float cambio1, cambio1z, cambio1u, cambio1v, cambio2, cambio2z, cambio2u, cambio2v;
-    punto p1, p2, p3;
+    punto p1, p2, p3, N;
 
     if (i >= optr->num_triangles)
         return;
@@ -282,20 +289,15 @@ void dibujar_triangulo(triobj *optr, int i)
     // print_matrizea("Mcsr", cam_ptr->Mcsr);
     // mxm(Modelview, sel_cptr->Mcsr, optr->mptr->m);
 
-    v[0] = cam_ptr->mptr->m[0] - optr->mptr->m[0];
-    v[1] = cam_ptr->mptr->m[4] - optr->mptr->m[4];
-    v[2] = cam_ptr->mptr->m[8] - optr->mptr->m[8];
-
-    if (culling && ((v[0] * tptr->N.x) + (v[1] * tptr->N.y) + (v[2] * tptr->N.z)) < 0)
-    {
-        printf("Este no entra: %lf\n", (v[0] * tptr->N.x) + (v[1] * tptr->N.y) + (v[2] * tptr->N.z));
-        printf("Triangulo no visible.\n");
-        return;
-    }
+    // Multiplicamos por el Mmodelview cada punto, que en ésta primera instancia no es más que la matriz de la cámara
+    // multiplicada por la matriz del objeto. Importante. También multiplicamos los puntos del vector normal.
     mxp(&p1, Mmodelview, tptr->p1);
     mxp(&p2, Mmodelview, tptr->p2);
     mxp(&p3, Mmodelview, tptr->p3);
+    mxp(&N, Mmodelview, tptr->N);
 
+    // printf("vector normal ahora: %f, %f, %f \n", N.x, N.y, N.z);
+    //Entramos si el modo perspectiva está activado.
     if (persp)
     {
         // printf("--------------------Triplete de puntos-----------------------------------------\n");
@@ -305,32 +307,78 @@ void dibujar_triangulo(triobj *optr, int i)
         mpxptr(&p2);
         // printf("-P3-\n");
         mpxptr(&p3);
+
+        // Multiplicamos el vector normal también por la matriz de perspetiva. Pero no por quinientos porque no es un punto
+        // que deseemos proyectar en un cubo como tal.
+        mxp(&N, Mp, N);
     }
 
     // print_matrizea("m", cam_ptr->mptr->m);
+
+    // Modo lineak, solo nos encargamos de dibujar las líneas entre los puntos del triángulo.
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
+        glColor3d(1.0, 1.0, 1.0);
+
+        // Aplicamos clipping a todos los vértices del triángulo. Si tan solo uno de ellos supera 700, entramos y no dibujamos dicha línea.
+
         if ((abs(p1.x) > 700 | abs(p2.x) > 700 | abs(p3.x) > 700) | (abs(p1.y) > 700 | abs(p2.y) > 700 | abs(p3.y) > 700) | (abs(p1.z) > 700 | abs(p2.z) > 700 | abs(p3.z) > 700))
         {
-
-            printf("Triangulo fuera del cubo.\n");
             glEnd();
             return;
         }
+
+        // Comprobamos el criterio de culling en el caso de que estemos en modo perspectiva.
+        // En éste caso,  tenemos que fijarnos en el ángulo que se forma entre el vector normal y el vector que va desde el objeto
+        // a la cámara. Y como la cámara se encuentra en el origen, pues será el punto pero negativo (en nuestro caso escogemos p1).
+
+        if (persp && (-p1.x * N.x + -p1.y * N.y + -p1.z * N.z) < 0)
+        {
+            if (culling)
+            {
+                glColor3d(1.0, 0.0, 0.0);
+            }
+            else
+            {
+                glEnd();
+                return;
+            }
+        }
+
+        // Ahora comprobamos si estamos en modo paralelo. En éste otro caso, la cámara está situada en el infinito.
+
+        if (!persp && (0 * N.x + 0 * N.y + 1 * N.z) < 0)
+        {
+            if (culling)
+            {
+                glColor3d(1.0, 0.0, 0.0);
+            }
+            else
+            {
+                glEnd();
+                return;
+            }
+        }
+
         glVertex3d(p1.x, p1.y, p1.z);
         glVertex3d(p2.x, p2.y, p2.z);
         glVertex3d(p3.x, p3.y, p3.z);
         glEnd();
 
+        // Si el modo normalak está activado, dibujamos las líneas de las normales.
         if (normalak)
         {
             glBegin(GL_LINES);
-            glVertex3d(p2.x, p2.y, p2.z);
-            // normal = calcular_normal(p1, p2, p3);
-            printf("Normal: %f, %f, %f\n", tptr->N.x, tptr->N.y, tptr->N.z);
-            glVertex3d((p2.x + tptr->N.x) * 1.1, (p2.y + tptr->N.y) * 1.1, (p2.z + tptr->N.z) * 1.1);
-            // printf("Dibujada linea de normal, del punto %f, %f, %f al punto %f, %f, %f\n", p3.x, p3.y, p3.z, (p3.x + tptr->N.x) * 200, (p3.y + tptr->N.y) * 200, (p3.z + tptr->N.z) * 200);
+            glVertex3f(p1.x, p1.y, p1.z);
+
+            // También aplicamos el clipping en éstas líneas. Esta vez más estricto puesto que da más problemas.
+            if (abs(p1.x) > 500 | abs(p1.y) > 500 | abs(p1.z) > 500)
+            {
+                glEnd();
+                return;
+            }
+            glVertex3f(p1.x + 40 * N.x, p1.y + 40 * N.y, p1.z + 40 * N.z);
             glEnd();
         }
         return;
@@ -465,7 +513,7 @@ void transformacion_principal(double m[16])
     int i;
     int j;
 
-    print_matrizea("Me ha llegado esta bazofia:", m);
+    // print_matrizea("Me ha llegado esta bazofia:", m);
     for (i = 0; i < 16; i++)
     {
         Mat[i] = 0;
@@ -480,8 +528,8 @@ void transformacion_principal(double m[16])
             mxm(new_m->m, cam_ptr->mptr->m, m);
             new_m->hptr = cam_ptr->mptr;
             cam_ptr->mptr = new_m;
-            print_matrizea("Matriz de la camara:", cam_ptr->mptr->m);
-            calcular_mcsr();
+            // print_matrizea("Matriz de la camara:", cam_ptr->mptr->m);
+            calcular_mcsr(cam_ptr);
             // print_matrizea("Mcsr:", cam_ptr->Mcsr);
             return;
         }
@@ -496,13 +544,18 @@ void transformacion_principal(double m[16])
             mxm(new_m->m, m, cam_ptr->mptr->m);
             new_m->hptr = cam_ptr->mptr;
             cam_ptr->mptr = new_m;
-            calcular_mcsr();
+            calcular_mcsr(cam_ptr);
             return;
         }
         mxm(new_m->m, m, sel_ptr->mptr->m);
     }
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
+    if (objeto_perspectiva == 1)
+    {
+        cam_ptr->mptr = new_m;
+        calcular_mcsr(cam_ptr);
+    }
 }
 void x_aldaketa(int dir)
 {
@@ -627,16 +680,16 @@ void y_aldaketa(int dir)
         Mat[7] = -sel_ptr->mptr->m[7];
         Mat[11] = -sel_ptr->mptr->m[11];
         obtener_rotacion_rodrigues(x, y, z, angulo, m);
-        print_matrizea("rotacion rodrigues", m);
-        print_matrizea("M-at", Mat);
+        // print_matrizea("rotacion rodrigues", m);
+        // print_matrizea("M-at", Mat);
         mxm(aux, m, Mat);
-        print_matrizea("rotacion rodrigues", m);
+        // print_matrizea("rotacion rodrigues", m);
         Mat[3] = sel_ptr->mptr->m[3];
         Mat[7] = sel_ptr->mptr->m[7];
         Mat[11] = sel_ptr->mptr->m[11];
-        print_matrizea("M+at", Mat);
+        // print_matrizea("M+at", Mat);
         mxm(m, Mat, aux);
-        print_matrizea("rotacion final en modo analisis", m);
+        // print_matrizea("rotacion final en modo analisis", m);
     }
     else
     {
@@ -676,7 +729,7 @@ void z_aldaketa(int dir)
             mxm(new_m->m, cam_ptr->mptr->m, m);
             new_m->hptr = cam_ptr->mptr;
             cam_ptr->mptr = new_m;
-            calcular_mcsr();
+            calcular_mcsr(cam_ptr);
             return;
         }
         // Nos aseguramos de que se traslade la zeta unicamente en modo analisis.
@@ -721,6 +774,7 @@ void z_aldaketa(int dir)
     transformacion_principal(m);
 }
 
+// Escalado de objeto.
 void s_aldaketa(int dir)
 {
     double m[16];
@@ -731,6 +785,8 @@ void s_aldaketa(int dir)
         m[i] = 0;
     }
 
+    // Si hemos pulsado s minúscula empequeñecemos.
+
     if (dir == 0)
     {
         m[0] = 0.950;
@@ -740,6 +796,9 @@ void s_aldaketa(int dir)
         transformacion_principal(m);
         return;
     }
+
+    // Llegamos a éste punto sabemos que queremos agrandar el objeto.
+
     m[0] = 1.05;
     m[5] = 1.05;
     m[10] = 1.05;
@@ -790,6 +849,29 @@ static void teklatua(unsigned char key, int x, int y)
             }
         }
         break;
+    case 'C':
+        if (objeto_perspectiva == 0)
+        {
+            printf("guardo la siguiente matriz de camara:\n");
+            print_matrizea("", cam_ptr->mptr->m);
+            objeto_perspectiva = 1;
+            camara = 0;
+            free(fcamptr);
+            fcamptr = (my_camera *)malloc(sizeof(my_camera));
+            *fcamptr = *cam_ptr;
+            cam_ptr->mptr = sel_ptr->mptr;
+            calcular_mcsr(cam_ptr);
+        }
+        else
+        {
+            printf("Cargo la guardada:\n");
+            print_matrizea("", fcamptr->mptr->m);
+            camara = 1;
+            objeto_perspectiva = 0;
+            cam_ptr->mptr = fcamptr->mptr;
+            calcular_mcsr(cam_ptr);
+        }
+        break;
     case 'b':
         if (culling)
         {
@@ -817,6 +899,8 @@ static void teklatua(unsigned char key, int x, int y)
             denak = 1;
         break;
     case 'c':
+        if (objeto_perspectiva == 1)
+            break;
         if (camara == 1)
             camara = 0;
         else
@@ -847,9 +931,12 @@ static void teklatua(unsigned char key, int x, int y)
     case 'g':
         if (ald_lokala == 1)
         {
-            ald_lokala = 0;
-            establecer_camara(sel_ptr->mptr->m[3], sel_ptr->mptr->m[7], sel_ptr->mptr->m[11]);
-            print_matrizea("Matriz de la camara mirando hacia el objeto seleccionado:", cam_ptr->mptr->m);
+            if (camara == 1)
+            {
+                ald_lokala = 0;
+                establecer_camara(sel_ptr->mptr->m[3], sel_ptr->mptr->m[7], sel_ptr->mptr->m[11]);
+                print_matrizea("Matriz de la camara mirando hacia el objeto seleccionado:", cam_ptr->mptr->m);
+            }
             // print_matrizea("Mcsr: ", cam_ptr->Mcsr);
         }
         else
@@ -858,13 +945,15 @@ static void teklatua(unsigned char key, int x, int y)
         }
         break;
     case 's':
-        s_aldaketa(0);
+        // Deshabilitado para cámara.
+        // s_aldaketa(0);
         break;
     case 'S':
-        s_aldaketa(1);
+        // Deshabilitado para cámara.
+        // s_aldaketa(1);
         break;
     case 'x':
-        printf("//////////////////////////////////////////////////////CAMBIO EN X////////////////////////////////////////////////////////////////////\n");
+        // printf("//////////////////////////////////////////////////////CAMBIO EN X////////////////////////////////////////////////////////////////////\n");
         if (camara == 1)
         {
             y_aldaketa(-1);
@@ -874,7 +963,7 @@ static void teklatua(unsigned char key, int x, int y)
         x_aldaketa(-1);
         break;
     case 'y':
-        printf("//////////////////////////////////////////////////////CAMBIO EN Y////////////////////////////////////////////////////////////////////\n");
+        // printf("//////////////////////////////////////////////////////CAMBIO EN Y////////////////////////////////////////////////////////////////////\n");
         if (camara == 1)
         {
             x_aldaketa(-1);
@@ -884,7 +973,7 @@ static void teklatua(unsigned char key, int x, int y)
         y_aldaketa(-1);
         break;
     case 'z':
-        printf("/////////////////////////////////////////////////////CAMBIO EN Z//////////////////////////////////////////////////////////////////////\n");
+        // printf("/////////////////////////////////////////////////////CAMBIO EN Z//////////////////////////////////////////////////////////////////////\n");
         printf("z\n");
         z_aldaketa(-1);
         break;
@@ -1046,7 +1135,7 @@ void establecer_camara(double atx, double aty, double atz)
     }
     else
     {
-        cam_ptr->mptr->m[11] = 350; // Para poder verlo todo desde la distancia.
+        cam_ptr->mptr->m[11] = 250; // Para poder verlo todo desde la distancia.
     }
     // Calculamos la columna z de la matriz de la cámara.
 
@@ -1110,12 +1199,14 @@ int main(int argc, char **argv)
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
     denak = 1;
     lineak = 1;
-    culling = 1;
-    normalak = 0;
+    culling = 0;
+    normalak = 1;
     persp = 1;
     objektuak = 1;
+    objeto_perspectiva = 0;
     camara = 1;
     foptr = 0;
+    fcamptr = 0;
     sel_ptr = 0;
     aldaketa = 't';
     ald_lokala = 1;
@@ -1124,7 +1215,7 @@ int main(int argc, char **argv)
     cam_ptr = (my_camera *)malloc(sizeof(my_camera));
     cam_ptr->mptr = (mlist *)malloc(sizeof(mlist));
     establecer_camara(0, 0, 0);
-    calcular_mcsr();
+    calcular_mcsr(cam_ptr);
     print_matrizea("Camara estado inicial:", cam_ptr->mptr->m);
     read_from_file("k.txt");
     sel_ptr->mptr->m[3] = -200;
