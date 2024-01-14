@@ -247,26 +247,26 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
 
 void mpxptr(punto *pt)
 {
-    // printf("punto antes de multiplicar: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
     // getchar();
-    // print_matrizea("Matriz de perspectiva Borja:", Mp);
-    mxp(pt, Mp, *pt);
-    // printf("punto multiplicado por matriz de perspectiva: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
-    if (pt->w == 0)
+    // print_matrizea("Matriz de perspectiva:", Mp);
+    if (pt->w == 0.0)
         pt->w = 1.0;
+    mxp(pt, Mp, *pt);
+    // printf("\npunto multiplicado por matriz de perspectiva: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
+    // printf("pt->w: %f\n", pt->w);
     pt->x = (pt->x * 500.0) / pt->w;
     pt->y = (pt->y * 500.0) / pt->w;
     pt->z = (pt->z * 500.0) / pt->w;
 
     pt->w = 1;
-    // printf("punto multiplicado por 500: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
+    // printf("\npunto multiplicado por 500: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
 }
 
 /**
  * Función encargada de, tal y como dice el nombre de la función, dibujar un triángulo. Dependiendo del modo de proyección, lo hará en perspectiva
  * (multiplicándolo por ésta matriz) o en paralelo (simplemente multiplicándolo la matriz de la cámara).
  * A parte de ésto, también se encarga de dibujar las líneas de las normales, si se ha activado la opción de dibujarlas.
-*/
+ */
 void dibujar_triangulo(triobj *optr, int i)
 {
     hiruki *tptr;
@@ -297,7 +297,7 @@ void dibujar_triangulo(triobj *optr, int i)
     mxp(&N, Mmodelview, tptr->N);
 
     // printf("vector normal ahora: %f, %f, %f \n", N.x, N.y, N.z);
-    //Entramos si el modo perspectiva está activado.
+    // Entramos si el modo perspectiva está activado.
     if (persp)
     {
         // printf("--------------------Triplete de puntos-----------------------------------------\n");
@@ -307,7 +307,6 @@ void dibujar_triangulo(triobj *optr, int i)
         mpxptr(&p2);
         // printf("-P3-\n");
         mpxptr(&p3);
-
         // Multiplicamos el vector normal también por la matriz de perspetiva. Pero no por quinientos porque no es un punto
         // que deseemos proyectar en un cubo como tal.
         mxp(&N, Mp, N);
@@ -323,8 +322,13 @@ void dibujar_triangulo(triobj *optr, int i)
 
         // Aplicamos clipping a todos los vértices del triángulo. Si tan solo uno de ellos supera 700, entramos y no dibujamos dicha línea.
 
-        if ((abs(p1.x) > 700 | abs(p2.x) > 700 | abs(p3.x) > 700) | (abs(p1.y) > 700 | abs(p2.y) > 700 | abs(p3.y) > 700) | (abs(p1.z) > 700 | abs(p2.z) > 700 | abs(p3.z) > 700))
+        if ((abs(p1.x) > 550 | abs(p2.x) > 550 | abs(p3.x) > 550) | (abs(p1.y) > 500 | abs(p2.y) > 550 | abs(p3.y) > 550) | (abs(p1.z) > 550 | abs(p2.z) > 550 | abs(p3.z) > 550))
         {
+            // prinft("Este punto no entra porque se ha pasado de gracioso:\n")
+            // printf("P1: %f, %f, %f\n", p1.x, p1.y, p1.z);
+            // printf("P2: %f, %f, %f\n", p2.x, p2.y, p2.z);
+            // printf("P3: %f, %f, %f\n", p3.x, p3.y, p3.z);
+
             glEnd();
             return;
         }
@@ -1090,9 +1094,8 @@ void perspectiva()
     Mp[11] = -(2 * f * n) / (f - n);
     Mp[14] = -1;
 
-    print_matrizea("Perspectiva:", Mp);
+    // print_matrizea("Perspectiva:", Mp);
 
-    printf("Perspectiva:\n");
 }
 
 // Establece la cámara dando un punto de atención y recalcula la matriz de cambio de sistema de referencia.
@@ -1194,7 +1197,7 @@ int main(int argc, char **argv)
         printf("Ez dago texturaren fitxategia (testura.ppm)\n");
         exit(-1);
     }
-    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
     denak = 1;

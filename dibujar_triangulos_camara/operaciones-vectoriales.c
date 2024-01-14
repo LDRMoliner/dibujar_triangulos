@@ -61,7 +61,7 @@ int normalizar_vector(punto *vector)
 
     length += vector->x * vector->x + vector->y * vector->y + vector->z * vector->z;
     length = sqrt(length);
-    
+
     vector->x = vector->x / length;
     vector->y = vector->y / length;
     vector->z = vector->z / length;
@@ -96,6 +96,8 @@ int mxp(punto *pptr, double m[16], punto p)
         pptr->w = p.x * m[12] + p.y * m[13] + p.z * m[14] + p.w * m[15];
     pptr->u = p.u;
     pptr->v = p.v;
+
+    // printf("Punto: %f, %f, %f, %f\n", pptr->x, pptr->y, pptr->z, pptr->w);
     return 0;
 }
 
@@ -120,10 +122,10 @@ punto calcular_normal(punto p1, punto p2, punto p3)
     N[1] = -(v1[0] * v2[2] - v2[0] * v1[2]);
     N[2] = v1[0] * v2[1] - v2[0] * v1[1];
 
-    printf("Perpendicular entre: %f, %f, %f y %f, %f, %f: \n", v1[0], v1[1], v1[2], v2[0], v2[1], v2[2]);
+    // printf("Perpendicular entre: %f, %f, %f y %f, %f, %f: \n", v1[0], v1[1], v1[2], v2[0], v2[1], v2[2]);
     printf("%f, %f, %f\n", N[0], N[1], N[2]);
     normalizar(N);
-    printf("Normalizado: %f, %f, %f\n", N[0], N[1], N[2]);
+    // printf("Normalizado: %f, %f, %f\n", N[0], N[1], N[2]);
 
     normal.x = N[0];
     normal.y = N[1];
