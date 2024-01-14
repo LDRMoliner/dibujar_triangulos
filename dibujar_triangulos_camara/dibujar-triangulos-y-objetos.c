@@ -62,6 +62,7 @@ int persp;
 int objektuak;
 char aldaketa;
 int ald_lokala;
+int color_rojo;
 unsigned char *colorv;
 double Mp[16] = {0.0};
 double at[3] = {0.0};
@@ -114,9 +115,18 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
         // color_textura funtzioa ondo kodetu
         // programar de forma correcta la función color_textura
         colorv = color_textura(u, v);
-        r = colorv[0];
-        g = colorv[1];
-        b = colorv[2];
+        if (color_rojo)
+        {
+            r = 255;
+            g = 0;
+            b = 0;
+        }
+        else
+        {
+            r = colorv[0];
+            g = colorv[1];
+            b = colorv[2];
+        }
         glColor3ub(r, g, b);
         glVertex3f(xkoord, linea, zkoord);
         // TODO
@@ -125,6 +135,7 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
         u += difu;
         v += difv;
         zkoord += difz;
+        
     }
 
     glEnd();
@@ -283,6 +294,9 @@ void dibujar_triangulo(triobj *optr, int i)
     float cambio1, cambio1z, cambio1u, cambio1v, cambio2, cambio2z, cambio2u, cambio2v;
     punto p1, p2, p3, N;
 
+    // Variable para saber si debemos colorear una textura/líneas en rojo.
+
+    color_rojo = 0;
     if (i >= optr->num_triangles)
         return;
     tptr = optr->triptr + i;
@@ -314,78 +328,78 @@ void dibujar_triangulo(triobj *optr, int i)
 
     // print_matrizea("m", cam_ptr->mptr->m);
 
+    // Aplicamos clipping a todos los vértices del triángulo. Si tan solo uno de ellos supera 700, entramos y no dibujamos dicha línea.
+
+    if ((abs(p1.x) > 550 | abs(p2.x) > 550 | abs(p3.x) > 550) | (abs(p1.y) > 500 | abs(p2.y) > 550 | abs(p3.y) > 550) | (abs(p1.z) > 550 | abs(p2.z) > 550 | abs(p3.z) > 550))
+    {
+        // prinft("Este punto no entra porque se ha pasado de gracioso:\n")
+        // printf("P1: %f, %f, %f\n", p1.x, p1.y, p1.z);
+        // printf("P2: %f, %f, %f\n", p2.x, p2.y, p2.z);
+        // printf("P3: %f, %f, %f\n", p3.x, p3.y, p3.z);
+        return;
+    }
+
+    if (persp && (-p1.x * N.x + -p1.y * N.y + -p1.z * N.z) < 0)
+    {
+        if (culling)
+        {
+            color_rojo = 1;
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    // Ahora comprobamos si estamos en modo paralelo. En éste otro caso, la cámara está situada en el infinito.
+
+    if (!persp && (0 * N.x + 0 * N.y + 1 * N.z) < 0)
+    {
+        if (culling)
+        {
+            color_rojo = 1;
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    if (normalak)
+    {
+        glBegin(GL_LINES);
+
+        // También aplicamos el clipping en éstas líneas. Esta vez más estricto puesto que da más problemas.
+        if (abs(p1.x) > 500 | abs(p1.y) > 500 | abs(p1.z) > 500)
+        {
+            glEnd();
+            return;
+        }
+        glVertex3f(p1.x, p1.y, p1.z);
+        glVertex3f(p1.x + 40 * N.x, p1.y + 40 * N.y, p1.z + 40 * N.z);
+        glEnd();
+    }
     // Modo lineak, solo nos encargamos de dibujar las líneas entre los puntos del triángulo.
+
     if (lineak == 1)
     {
         glBegin(GL_POLYGON);
         glColor3d(1.0, 1.0, 1.0);
 
-        // Aplicamos clipping a todos los vértices del triángulo. Si tan solo uno de ellos supera 700, entramos y no dibujamos dicha línea.
-
-        if ((abs(p1.x) > 550 | abs(p2.x) > 550 | abs(p3.x) > 550) | (abs(p1.y) > 500 | abs(p2.y) > 550 | abs(p3.y) > 550) | (abs(p1.z) > 550 | abs(p2.z) > 550 | abs(p3.z) > 550))
-        {
-            // prinft("Este punto no entra porque se ha pasado de gracioso:\n")
-            // printf("P1: %f, %f, %f\n", p1.x, p1.y, p1.z);
-            // printf("P2: %f, %f, %f\n", p2.x, p2.y, p2.z);
-            // printf("P3: %f, %f, %f\n", p3.x, p3.y, p3.z);
-
-            glEnd();
-            return;
-        }
-
         // Comprobamos el criterio de culling en el caso de que estemos en modo perspectiva.
         // En éste caso,  tenemos que fijarnos en el ángulo que se forma entre el vector normal y el vector que va desde el objeto
         // a la cámara. Y como la cámara se encuentra en el origen, pues será el punto pero negativo (en nuestro caso escogemos p1).
 
-        if (persp && (-p1.x * N.x + -p1.y * N.y + -p1.z * N.z) < 0)
+        if (color_rojo)
         {
-            if (culling)
-            {
-                glColor3d(1.0, 0.0, 0.0);
-            }
-            else
-            {
-                glEnd();
-                return;
-            }
+            glColor3d(1.0, 0.0, 0.0);
         }
-
-        // Ahora comprobamos si estamos en modo paralelo. En éste otro caso, la cámara está situada en el infinito.
-
-        if (!persp && (0 * N.x + 0 * N.y + 1 * N.z) < 0)
-        {
-            if (culling)
-            {
-                glColor3d(1.0, 0.0, 0.0);
-            }
-            else
-            {
-                glEnd();
-                return;
-            }
-        }
-
         glVertex3d(p1.x, p1.y, p1.z);
         glVertex3d(p2.x, p2.y, p2.z);
         glVertex3d(p3.x, p3.y, p3.z);
         glEnd();
-
-        // Si el modo normalak está activado, dibujamos las líneas de las normales.
-        if (normalak)
-        {
-            glBegin(GL_LINES);
-            glVertex3f(p1.x, p1.y, p1.z);
-
-            // También aplicamos el clipping en éstas líneas. Esta vez más estricto puesto que da más problemas.
-            if (abs(p1.x) > 500 | abs(p1.y) > 500 | abs(p1.z) > 500)
-            {
-                glEnd();
-                return;
-            }
-            glVertex3f(p1.x + 40 * N.x, p1.y + 40 * N.y, p1.z + 40 * N.z);
-            glEnd();
-        }
         return;
+        // Si el modo normalak está activado, dibujamos las líneas de las normales.
     }
 
     // Encontramos el punto máximo, mínimo, y medio del triángulo.
@@ -399,6 +413,7 @@ void dibujar_triangulo(triobj *optr, int i)
     // Llamada a función rellenar triángulo.
 
     rellenar_triangulo(pgoiptr, perdiptr, pbeheptr);
+    color_rojo = 0;
 }
 
 static void marraztu(void)
@@ -939,7 +954,7 @@ static void teklatua(unsigned char key, int x, int y)
             {
                 ald_lokala = 0;
                 establecer_camara(sel_ptr->mptr->m[3], sel_ptr->mptr->m[7], sel_ptr->mptr->m[11]);
-                print_matrizea("Matriz de la camara mirando hacia el objeto seleccionado:", cam_ptr->mptr->m);
+                // print_matrizea("Matriz de la camara mirando hacia el objeto seleccionado:", cam_ptr->mptr->m);
             }
             // print_matrizea("Mcsr: ", cam_ptr->Mcsr);
         }
@@ -978,7 +993,6 @@ static void teklatua(unsigned char key, int x, int y)
         break;
     case 'z':
         // printf("/////////////////////////////////////////////////////CAMBIO EN Z//////////////////////////////////////////////////////////////////////\n");
-        printf("z\n");
         z_aldaketa(-1);
         break;
     case 'X':
@@ -1095,7 +1109,6 @@ void perspectiva()
     Mp[14] = -1;
 
     // print_matrizea("Perspectiva:", Mp);
-
 }
 
 // Establece la cámara dando un punto de atención y recalcula la matriz de cambio de sistema de referencia.
