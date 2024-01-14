@@ -115,7 +115,9 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
         // color_textura funtzioa ondo kodetu
         // programar de forma correcta la función color_textura
         colorv = color_textura(u, v);
-        if (color_rojo)
+
+        
+        if (!persp && color_rojo) // ¿Por qué lo hacemos solo para paralelo? Con modo perspectiva hay problemas con el z-buffer. Más detalles en la documentación.
         {
             r = 255;
             g = 0;
@@ -127,6 +129,7 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
             g = colorv[1];
             b = colorv[2];
         }
+
         glColor3ub(r, g, b);
         glVertex3f(xkoord, linea, zkoord);
         // TODO
@@ -135,7 +138,6 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
         u += difu;
         v += difv;
         zkoord += difz;
-        
     }
 
     glEnd();
@@ -355,6 +357,7 @@ void dibujar_triangulo(triobj *optr, int i)
 
     if (!persp && (0 * N.x + 0 * N.y + 1 * N.z) < 0)
     {
+        printf("Normal: %f, %f, %f\n", N.x, N.y, N.z);
         if (culling)
         {
             color_rojo = 1;
@@ -451,11 +454,11 @@ static void marraztu(void)
     glLoadIdentity();
     if (persp == 1)
     {
-        glOrtho(-500.0, 500.0, -500.0, 500.0, -500.0, 500.0);
+        glOrtho(-500.0, 500.0, -500.0, 500.0, -500.0, 1000.0);
     }
     else
     {
-        glOrtho(-500.0, 500.0, -500.0, 500.0, 0, 500.0);
+        glOrtho(-500.0, 500.0, -500.0, 500.0, 1.0, 500.0);
     }
 
     if (objektuak == 1)
@@ -1210,7 +1213,7 @@ int main(int argc, char **argv)
         printf("Ez dago texturaren fitxategia (testura.ppm)\n");
         exit(-1);
     }
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(0.0f, 0.0f, 0.7f, 1.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST); // activar el test de profundidad (Z-buffer)
     denak = 1;
@@ -1233,9 +1236,9 @@ int main(int argc, char **argv)
     establecer_camara(0, 0, 0);
     calcular_mcsr(cam_ptr);
     print_matrizea("Camara estado inicial:", cam_ptr->mptr->m);
-    read_from_file("k.txt");
-    sel_ptr->mptr->m[3] = -200;
-    sel_ptr->mptr->m[11] = 0;
+    // read_from_file("k.txt");
+    // sel_ptr->mptr->m[3] = -200;
+    // sel_ptr->mptr->m[11] = 0;
     if (argc > 1)
     {
         read_from_file(argv[1]);
