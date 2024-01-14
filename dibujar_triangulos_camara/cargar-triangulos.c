@@ -77,7 +77,7 @@ int cargar_triangulos_color(char *fitxiz, int *hkopptr, hiruki **hptrptr, unsign
 		{
 			kolorea = 1;
 			sscanf(line + 2, "%d%d%d", &r, &g, &b);
-			printf("kolorea: %d, %d,%d\n", r, g, b);
+			// printf("kolorea: %d, %d,%d\n", r, g, b);
 		}
 	}
 	fclose(obj_file);

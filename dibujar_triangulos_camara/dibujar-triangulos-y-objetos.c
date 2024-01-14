@@ -70,6 +70,19 @@ double Mmodelview[16] = {0.0};
 
 char fitxiz[100];
 
+int resumen()
+{
+    printf("Modo perspectiva: %d\n", persp);
+    printf("Modo local (modo analisis en camara): %d\n", ald_lokala);
+    printf("Modo global (modo vuelo en objeto): %d\n", ald_lokala);
+    printf("Culling Activado: %d\n", culling);
+    printf("Dibujar líneas: %d\n", lineak);
+    printf("Dibujar normales: %d\n", normalak);
+    if (aldaketa == 't')
+        printf("Vamos a hacer traslaciones.\n");
+    if (aldaketa == 'r')
+        printf("Vamos a hacer rotaciones.\n");
+}
 // funtzio honek u eta v koordenatuei dagokien pointerra itzuli behar du.
 // debe devolver el pointer correspondiente a las coordenadas u y v
 unsigned char *color_textura(float u, float v)
@@ -116,7 +129,6 @@ void dibujar_linea_z(int linea, float c1x, float c1z, float c1u, float c1v, floa
         // programar de forma correcta la función color_textura
         colorv = color_textura(u, v);
 
-        
         if (!persp && color_rojo) // ¿Por qué lo hacemos solo para paralelo? Con modo perspectiva hay problemas con el z-buffer. Más detalles en la documentación.
         {
             r = 255;
@@ -355,9 +367,9 @@ void dibujar_triangulo(triobj *optr, int i)
 
     // Ahora comprobamos si estamos en modo paralelo. En éste otro caso, la cámara está situada en el infinito.
 
-    if (!persp && (0 * N.x + 0 * N.y + 1 * N.z) < 0)
+    if (!persp && (0 * N.x + 0 * N.y + 2 * N.z) < 0)
     {
-        printf("Normal: %f, %f, %f\n", N.x, N.y, N.z);
+        // printf("Normal: %f, %f, %f\n", N.x, N.y, N.z);
         if (culling)
         {
             color_rojo = 1;
@@ -509,7 +521,7 @@ void read_from_file(char *fitx)
     }
     else
     {
-        printf("objektuaren matrizea...\n");
+        // printf("objektuaren matrizea...\n");
         optr->mptr = (mlist *)malloc(sizeof(mlist));
         for (i = 0; i < 16; i++)
             optr->mptr->m[i] = 0;
@@ -612,8 +624,8 @@ void x_aldaketa(int dir)
     if (aldaketa == 't' & camara == 0)
     {
         m[3] = dir * 5;
-        if (camara == 0)
-            print_matrizea("Traslacion: ", m);
+        // if (camara == 0)
+        //     print_matrizea("Traslacion: ", m);
         transformacion_principal(m);
         return;
     }
@@ -781,7 +793,7 @@ void z_aldaketa(int dir)
         Mat[7] = -Mat[7];
         Mat[11] = -Mat[11];
         mxm(m, Mat, aux);
-        print_matrizea("rotacion final en modo analisi", m);
+        // print_matrizea("rotacion final en modo analisi", m);
 
         obtener_rotacion_rodrigues(x, y, z, angulo, m);
     }
@@ -792,7 +804,7 @@ void z_aldaketa(int dir)
         m[4] = sin(angulo);
         m[5] = cos(angulo);
     }
-    print_matrizea("Aldaketa", m);
+    // print_matrizea("Aldaketa", m);
     transformacion_principal(m);
 }
 
@@ -877,6 +889,7 @@ static void teklatua(unsigned char key, int x, int y)
             printf("guardo la siguiente matriz de camara:\n");
             print_matrizea("", cam_ptr->mptr->m);
             objeto_perspectiva = 1;
+            culling = 1; // Lo hacemos para que se entienda mejor (al principio no enseña nada porque solo se pueden ver caras traseras).
             camara = 0;
             free(fcamptr);
             fcamptr = (my_camera *)malloc(sizeof(my_camera));
@@ -1086,7 +1099,9 @@ static void teklatua(unsigned char key, int x, int y)
     default:
         printf("%d %c\n", key, key);
     }
-
+    printf("\n");
+    resumen();
+    printf("\n");
     // The screen must be drawn to show the new triangle
     glutPostRedisplay();
 }
@@ -1236,9 +1251,9 @@ int main(int argc, char **argv)
     establecer_camara(0, 0, 0);
     calcular_mcsr(cam_ptr);
     print_matrizea("Camara estado inicial:", cam_ptr->mptr->m);
-    // read_from_file("k.txt");
-    // sel_ptr->mptr->m[3] = -200;
-    // sel_ptr->mptr->m[11] = 0;
+    read_from_file("k.txt");
+    sel_ptr->mptr->m[3] = -200;
+    sel_ptr->mptr->m[11] = 0;
     if (argc > 1)
     {
         read_from_file(argv[1]);
@@ -1247,7 +1262,9 @@ int main(int argc, char **argv)
     {
         read_from_file("z.txt");
     }
-
+    printf("\n");
+    resumen();
+    printf("\n");
     sel_ptr->mptr->m[3] = 200;
     sel_ptr->mptr->m[11] = 0;
     glutMainLoop();
