@@ -13,6 +13,7 @@ int print_matrizea(char *str, double to_print[16])
     return 0;
 }
 
+// Matriz de rotación.
 int obtener_rotacion_rodrigues(double x, double y, double z, double angulo, double m[16])
 {
     // Matriz de rotación rodrigues
@@ -36,6 +37,7 @@ int obtener_rotacion_rodrigues(double x, double y, double z, double angulo, doub
     return 0;
 }
 
+// Multiplicar matriz por matriz.
 int mxm(double resultado[16], double operando_izquierdo[16], double operando_derecho[16])
 {
     int i, j, k;
@@ -55,6 +57,8 @@ int mxm(double resultado[16], double operando_izquierdo[16], double operando_der
     }
     return 0;
 }
+
+// Normalizamos cualquier punto vector pasado por parámetro.
 int normalizar_vector(punto *vector)
 {
     double length = 0.0;
@@ -69,6 +73,7 @@ int normalizar_vector(punto *vector)
     return 0;
 }
 
+// Normalizamos cualquier vector pasado por parámetro.
 int normalizar(double vector[3])
 {
     double length = 0.0;
@@ -85,6 +90,7 @@ int normalizar(double vector[3])
     return 0;
 }
 
+// Matriz para multiplicar tanto puntos como vectores.
 int mxp(punto *pptr, double m[16], punto p)
 {
     // print_matrizea("");
@@ -101,6 +107,7 @@ int mxp(punto *pptr, double m[16], punto p)
     return 0;
 }
 
+// Calculamos normal del polígono conformado por los tres puntos pasados por parámetro. Mejor explicado en la documentación.
 punto calcular_normal(punto p1, punto p2, punto p3)
 {
     punto normal;

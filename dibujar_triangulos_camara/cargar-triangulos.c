@@ -178,12 +178,12 @@ int cargar_triangulos_color(char *fitxiz, int *hkopptr, hiruki **hptrptr, unsign
 	{
 		for (i = 0; i < num_triangles; i++)
 		{
-			(*hptrptr)[i].p1.u = 0.0;
-			(*hptrptr)[i].p1.v = 0.0;
-			(*hptrptr)[i].p2.u = 0.0;
-			(*hptrptr)[i].p2.v = 0.0;
-			(*hptrptr)[i].p3.u = 0.0;
-			(*hptrptr)[i].p3.v = 0.0;
+			(*hptrptr)[i].p1.u = 1.0;
+			(*hptrptr)[i].p1.v = 1.0;
+			(*hptrptr)[i].p2.u = 1.0;
+			(*hptrptr)[i].p2.v = 1.0;
+			(*hptrptr)[i].p3.u = 1.0;
+			(*hptrptr)[i].p3.v = 1.0;
 			(*hptrptr)[i].N.u = 0.0;
 			(*hptrptr)[i].N.v = 0.0;
 		}

@@ -78,6 +78,7 @@ int resumen()
     printf("Culling Activado: %d\n", culling);
     printf("Dibujar líneas: %d\n", lineak);
     printf("Dibujar normales: %d\n", normalak);
+    printf("Perspectiva desde objeto: %d\n", objeto_perspectiva);
     if (aldaketa == 't')
         printf("Vamos a hacer traslaciones.\n");
     if (aldaketa == 'r')
@@ -270,11 +271,10 @@ void rellenar_triangulo(punto *pgoiptr, punto *perdiptr, punto *pbeheptr)
     }
 }
 
+// Multiplicamos la matriz de perspectiva por el punto pasado por parámetro. A parte, también lo multiplicamos por 500 para que se proyecte en un cubo de 500x500x500.
 void mpxptr(punto *pt)
 {
-    // getchar();
-    // print_matrizea("Matriz de perspectiva:", Mp);
-    if (pt->w == 0.0)
+    if (pt->w == 0.0) // Por si por algún casual obtenemos un punto con w cero.
         pt->w = 1.0;
     mxp(pt, Mp, *pt);
     // printf("\npunto multiplicado por matriz de perspectiva: %f, %f, %f, %f, %f, %f\n", pt->x, pt->y, pt->z, pt->u, pt->v, pt->w);
@@ -538,6 +538,9 @@ void read_from_file(char *fitx)
     printf("datuak irakurrita\nLectura finalizada\n");
 }
 
+// Pasada la matriz que se pase, y en función del modo en que nos encontremos, modifica la cámara o el objeto. 
+// Como sea la matriz de transformación que sea, el procedimiento final es el mismo, se ha decidido crear esta función para evitar repetir código.
+
 void transformacion_principal(double m[16])
 {
     // Modo analisis a la derecha, modo vuelo a la izquierda
@@ -547,7 +550,7 @@ void transformacion_principal(double m[16])
     int i;
     int j;
 
-    // print_matrizea("Me ha llegado esta bazofia:", m);
+    // Inicializamos las matrices que podamos llegar a utilizar.
     for (i = 0; i < 16; i++)
     {
         Mat[i] = 0;
@@ -555,25 +558,23 @@ void transformacion_principal(double m[16])
         aux[i] = 0;
     }
     mlist *new_m = (mlist *)malloc(sizeof(mlist));
+
+    // Estamos en modo local o análisis
     if (ald_lokala == 1)
     {
-        if (camara == 1)
+        if (camara == 1) // Modo análisis, simplemente debemos multiplicar la matriz de transformación por la derecha a la matriz asociada a la cámara.
         {
             mxm(new_m->m, cam_ptr->mptr->m, m);
             new_m->hptr = cam_ptr->mptr;
             cam_ptr->mptr = new_m;
-            // print_matrizea("Matriz de la camara:", cam_ptr->mptr->m);
-            calcular_mcsr(cam_ptr);
-            // print_matrizea("Mcsr:", cam_ptr->Mcsr);
+            calcular_mcsr(cam_ptr); // Recalculamos mcsr.
             return;
         }
-        // print_matrizea("Objeto a multiplicar por la izquierda", sel_ptr->mptr->m);
-        mxm(new_m->m, sel_ptr->mptr->m, m);
-        // print_matrizea("Objeto a multiplicar por la derecha", m);
+        mxm(new_m->m, sel_ptr->mptr->m, m); // Simplemente debemos multiplicar por la derecha a la matriz asociada al objeto.
     }
     else
     {
-        if (camara == 1)
+        if (camara == 1) // Modo vuelo, debemos multiplicar la matriz de transformación por la izquierda a la matriz asociada a la cámara.
         {
             mxm(new_m->m, m, cam_ptr->mptr->m);
             new_m->hptr = cam_ptr->mptr;
@@ -581,11 +582,11 @@ void transformacion_principal(double m[16])
             calcular_mcsr(cam_ptr);
             return;
         }
-        mxm(new_m->m, m, sel_ptr->mptr->m);
+        mxm(new_m->m, m, sel_ptr->mptr->m); // Modo global, multiplicamos por la izquierda a la matriz asociada al objeto.
     }
     new_m->hptr = sel_ptr->mptr;
     sel_ptr->mptr = new_m;
-    if (objeto_perspectiva == 1)
+    if (objeto_perspectiva == 1) // Si estamos en modo perspectiva del objeto, seguimos teniendo que modificar la matriz de la cámara. Recalculamos mcsr.
     {
         cam_ptr->mptr = new_m;
         calcular_mcsr(cam_ptr);
@@ -636,22 +637,23 @@ void x_aldaketa(int dir)
         y = cam_ptr->mptr->m[4];
         z = cam_ptr->mptr->m[8];
 
-        Mat[0] = 1;
-        Mat[5] = 1;
-        Mat[10] = 1;
-        Mat[15] = 1;
-
-        Mat[3] = -sel_ptr->mptr->m[3];
-        Mat[7] = -sel_ptr->mptr->m[7];
-        Mat[11] = -sel_ptr->mptr->m[11];
         obtener_rotacion_rodrigues(x, y, z, angulo, m);
-        mxm(aux, m, Mat);
-        Mat[3] = -Mat[3];
-        Mat[7] = -Mat[7];
-        Mat[11] = -Mat[11];
-        mxm(m, Mat, aux);
-        // transformacion_principal(m);
-        // return;
+
+        if (ald_lokala == 0)
+        {
+            Mat[0] = 1;
+            Mat[5] = 1;
+            Mat[10] = 1;
+            Mat[15] = 1;
+            Mat[3] = -sel_ptr->mptr->m[3];
+            Mat[7] = -sel_ptr->mptr->m[7];
+            Mat[11] = -sel_ptr->mptr->m[11];
+            mxm(aux, m, Mat);
+            Mat[3] = -Mat[3];
+            Mat[7] = -Mat[7];
+            Mat[11] = -Mat[11];
+            mxm(m, Mat, aux);
+        }
     }
     else
     {
@@ -710,20 +712,23 @@ void y_aldaketa(int dir)
         y = cam_ptr->mptr->m[5];
         z = cam_ptr->mptr->m[9];
 
-        Mat[3] = -sel_ptr->mptr->m[3];
-        Mat[7] = -sel_ptr->mptr->m[7];
-        Mat[11] = -sel_ptr->mptr->m[11];
         obtener_rotacion_rodrigues(x, y, z, angulo, m);
-        // print_matrizea("rotacion rodrigues", m);
-        // print_matrizea("M-at", Mat);
-        mxm(aux, m, Mat);
-        // print_matrizea("rotacion rodrigues", m);
-        Mat[3] = sel_ptr->mptr->m[3];
-        Mat[7] = sel_ptr->mptr->m[7];
-        Mat[11] = sel_ptr->mptr->m[11];
-        // print_matrizea("M+at", Mat);
-        mxm(m, Mat, aux);
-        // print_matrizea("rotacion final en modo analisis", m);
+
+        if (ald_lokala == 0)
+        {
+            Mat[0] = 1;
+            Mat[5] = 1;
+            Mat[10] = 1;
+            Mat[15] = 1;
+            Mat[3] = -sel_ptr->mptr->m[3];
+            Mat[7] = -sel_ptr->mptr->m[7];
+            Mat[11] = -sel_ptr->mptr->m[11];
+            mxm(aux, m, Mat);
+            Mat[3] = -Mat[3];
+            Mat[7] = -Mat[7];
+            Mat[11] = -Mat[11];
+            mxm(m, Mat, aux);
+        }
     }
     else
     {
@@ -777,25 +782,23 @@ void z_aldaketa(int dir)
         x = cam_ptr->mptr->m[2];
         y = cam_ptr->mptr->m[6];
         z = cam_ptr->mptr->m[10];
-
-        Mat[0] = 1;
-        Mat[5] = 1;
-        Mat[10] = 1;
-        Mat[15] = 1;
-
-        Mat[3] = -sel_ptr->mptr->m[3];
-        Mat[7] = -sel_ptr->mptr->m[7];
-        Mat[11] = -sel_ptr->mptr->m[11];
         obtener_rotacion_rodrigues(x, y, z, angulo, m);
 
-        mxm(aux, m, Mat);
-        Mat[3] = -Mat[3];
-        Mat[7] = -Mat[7];
-        Mat[11] = -Mat[11];
-        mxm(m, Mat, aux);
-        // print_matrizea("rotacion final en modo analisi", m);
-
-        obtener_rotacion_rodrigues(x, y, z, angulo, m);
+        if (ald_lokala == 0)
+        {
+            Mat[0] = 1;
+            Mat[5] = 1;
+            Mat[10] = 1;
+            Mat[15] = 1;
+            Mat[3] = -sel_ptr->mptr->m[3];
+            Mat[7] = -sel_ptr->mptr->m[7];
+            Mat[11] = -sel_ptr->mptr->m[11];
+            mxm(aux, m, Mat);
+            Mat[3] = -Mat[3];
+            Mat[7] = -Mat[7];
+            Mat[11] = -Mat[11];
+            mxm(m, Mat, aux);
+        }
     }
     else
     {
@@ -855,6 +858,11 @@ void undo()
     {
         sel_ptr->mptr = sel_ptr->mptr->hptr;
     }
+    if (objeto_perspectiva == 1)
+    {
+        cam_ptr->mptr = sel_ptr->mptr;
+        calcular_mcsr(cam_ptr);
+    }
 }
 
 // This function will be called whenever the user pushes one key
@@ -886,12 +894,12 @@ static void teklatua(unsigned char key, int x, int y)
     case 'C':
         if (objeto_perspectiva == 0)
         {
-            printf("guardo la siguiente matriz de camara:\n");
-            print_matrizea("", cam_ptr->mptr->m);
             objeto_perspectiva = 1;
             culling = 1; // Lo hacemos para que se entienda mejor (al principio no enseña nada porque solo se pueden ver caras traseras).
             camara = 0;
             free(fcamptr);
+
+            // Guardamos una copia de la cámara antes de que la modifiquemos con la matriz del objeto.
             fcamptr = (my_camera *)malloc(sizeof(my_camera));
             *fcamptr = *cam_ptr;
             cam_ptr->mptr = sel_ptr->mptr;
@@ -899,8 +907,7 @@ static void teklatua(unsigned char key, int x, int y)
         }
         else
         {
-            printf("Cargo la guardada:\n");
-            print_matrizea("", fcamptr->mptr->m);
+            // Cargamos la matriz de la cámara previamente modificada.
             camara = 1;
             objeto_perspectiva = 0;
             cam_ptr->mptr = fcamptr->mptr;
@@ -966,9 +973,9 @@ static void teklatua(unsigned char key, int x, int y)
     case 'g':
         if (ald_lokala == 1)
         {
+            ald_lokala = 0;
             if (camara == 1)
             {
-                ald_lokala = 0;
                 establecer_camara(sel_ptr->mptr->m[3], sel_ptr->mptr->m[7], sel_ptr->mptr->m[11]);
                 // print_matrizea("Matriz de la camara mirando hacia el objeto seleccionado:", cam_ptr->mptr->m);
             }
@@ -1109,7 +1116,7 @@ static void teklatua(unsigned char key, int x, int y)
 void perspectiva()
 {
 
-    double l, r, b, t, n, f;
+    double l, r, b, t, n, f; 
 
     l = -5.0;
     r = 5.0;
@@ -1130,7 +1137,6 @@ void perspectiva()
 }
 
 // Establece la cámara dando un punto de atención y recalcula la matriz de cambio de sistema de referencia.
-
 void establecer_camara(double atx, double aty, double atz)
 {
     int i, j;
@@ -1162,15 +1168,17 @@ void establecer_camara(double atx, double aty, double atz)
 
     cam_ptr->mptr->m[3] = 0;
     cam_ptr->mptr->m[7] = 0;
+
     // Alejamos más la cámara en modo análisis y perspectiva para que no se vea desde tan cerca.
     if (persp == 1 & ald_lokala == 0)
     {
-        cam_ptr->mptr->m[11] = 400; // Para poder verlo todo desde la distancia.
+        cam_ptr->mptr->m[11] = -400; // Para poder verlo todo desde la distancia mejor, como tal se puede quitar.
     }
     else
     {
-        cam_ptr->mptr->m[11] = 250; // Para poder verlo todo desde la distancia.
+        cam_ptr->mptr->m[11] = -250; // Para poder verlo todo desde la distancia mejor, como tal se puede quitar.
     }
+
     // Calculamos la columna z de la matriz de la cámara.
 
     Z_cam[0] = cam_ptr->mptr->m[3] - atx;
@@ -1205,6 +1213,7 @@ void establecer_camara(double atx, double aty, double atz)
     cam_ptr->mptr->m[5] = Y_cam[1];
     cam_ptr->mptr->m[9] = Y_cam[2];
 
+    // Recalculamos mcsr.
     calcular_mcsr(cam_ptr);
 }
 
